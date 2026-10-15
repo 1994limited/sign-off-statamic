@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.1 (2026-10-15)
+
+### Changed
+- **A new Control Panel icon**: a page with a folded corner and a tick, in the nav, on Content → Sign-off and on the dashboard widget.
+
 ## 1.2.0 (2026-10-15)
 
 ### Added
