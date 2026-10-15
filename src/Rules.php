@@ -195,7 +195,11 @@ class Rules
             return [__('approvers should be "publishers" or a list of roles, groups, users or a permission, not ":value". Only super users can approve it.', ['value' => $step->approvers])];
         }
 
-        if ($step->approvers !== [] && array_is_list($step->approvers)) {
+        if ($step->approvers === []) {
+            return [__('nobody is named to approve it, so only super users can.')];
+        }
+
+        if (array_is_list($step->approvers)) {
             return [__('approvers needs to say what each name is, like [\'roles\' => [\'legal\']]. Only super users can approve it.')];
         }
 

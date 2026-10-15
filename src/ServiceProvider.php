@@ -17,6 +17,7 @@ use NineteenNinetyFour\SignOff\Listeners\SendNotifications;
 use NineteenNinetyFour\SignOff\Listeners\WatchRevisions;
 use NineteenNinetyFour\SignOff\Stache\StacheSubmissionRepository;
 use NineteenNinetyFour\SignOff\Stache\SubmissionsStore;
+use Statamic\Events\AddonSettingsSaved;
 use Statamic\Events\EntryBlueprintFound;
 use Statamic\Events\EntrySaved;
 use Statamic\Events\RevisionSaved;
@@ -98,6 +99,14 @@ class ServiceProvider extends AddonServiceProvider
     public function bootAddon(): void
     {
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'sign-off');
+
+        // Tools → Addons → Sign-off → Settings. Its blueprint starts from
+        // the config file, which saved settings then take the place of.
+        $this->registerSettingsBlueprint(fn () => app(ControlPanelSettings::class)->blueprint());
+        app(ControlPanelSettings::class)->apply();
+        Event::listen(AddonSettingsSaved::class, fn (AddonSettingsSaved $event) => $event->settings->addon()->package() === ControlPanelSettings::PACKAGE
+            ? app(ControlPanelSettings::class)->apply()
+            : null);
 
         $this->publishes([__DIR__.'/../config/sign-off.php' => config_path('sign-off.php')], 'sign-off-config');
         $this->publishes([__DIR__.'/../database/migrations' => database_path('migrations')], 'sign-off-migrations');

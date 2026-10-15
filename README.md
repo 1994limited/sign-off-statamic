@@ -15,6 +15,7 @@ Sign-off is built on Statamic's own revisions. Changes to a live page wait in it
 - **A queue for reviewers.** Content → Sign-off lists what's waiting for you, longest wait first, everything in review, and every round's outcome. A dashboard widget shows what needs you.
 - **Emails.** Reviewers hear when an entry reaches their step; authors when it's sent back or signed off.
 - **Ways round it, on the record.** People with the "Publish without sign-off" permission can still publish straight away, for urgent fixes. It's recorded in the entry's sign-off history. Taking a page down doesn't need sign-off, unless you want it to.
+- **Set up in the Control Panel.** Steps, approvers and rules can be changed at Tools → Addons → Sign-off → Settings, or in a config file if you prefer.
 - **Checks your setup.** A collection without revisions, a role that doesn't exist: people who can fix it are told in the Control Panel, and `php please sign-off:check` fails in your deploy.
 - **For developers.** Events at every step, a PHP API, and flat-file or database storage.
 

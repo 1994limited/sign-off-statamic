@@ -6,6 +6,19 @@ Every option lives in `config/sign-off.php`. Publish it with:
 php artisan vendor:publish --tag=sign-off-config
 ```
 
+## In the Control Panel
+
+Super users, and roles with the *Sign-off settings* permission, can change the steps, the rules and email at **Tools → Addons → Sign-off → Settings**, without editing files.
+
+- Until it's first saved, the page shows what `config/sign-off.php` says, so saving it doesn't lose anything.
+- Once it's saved, its settings are used instead of the config file's, which you can then leave as it is. They're kept in `resources/addons/sign-off-statamic.yaml`, so they go into version control with the rest of your site.
+- Emptying the list of collections turns sign-off off.
+- Storage (`driver`) is only set in the config file.
+
+To go back to the config file, delete `resources/addons/sign-off-statamic.yaml`.
+
+Run `php please sign-off:check` after changing either: it checks the settings in use, wherever they came from.
+
 ## Collections and steps
 
 ```php

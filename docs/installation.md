@@ -52,6 +52,8 @@ Here a page is approved by someone with the `legal` role, then by anyone who can
 
 Each step needs a `handle` that stays the same: it's how a review in progress remembers which steps are done.
 
+You can also set the steps in the Control Panel, at Tools → Addons → Sign-off → Settings. See [Configuration](configuration.md#in-the-control-panel).
+
 ## 4. Check it
 
 ```bash

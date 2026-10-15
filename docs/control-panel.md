@@ -92,6 +92,10 @@ People who can configure collections (and super users) are told when sign-off's 
 
 Run `php please sign-off:check` to see the same from the command line. See [Troubleshooting](troubleshooting.md).
 
+## Settings
+
+Tools → Addons → Sign-off → Settings sets which collections need sign-off and their steps, the rules, and email, for super users and roles with the *Sign-off settings* permission. See [Configuration](configuration.md#in-the-control-panel).
+
 ## Permissions
 
 Sign-off uses Statamic's own permissions, plus one of its own:
@@ -99,5 +103,6 @@ Sign-off uses Statamic's own permissions, plus one of its own:
 | Permission | |
 | --- | --- |
 | **Publish entries without sign-off** | Under *Sign-off* in a role's permissions. Publish as Statamic normally allows, without the steps. It's recorded in the entry's sign-off history. |
+| **Sign-off settings** | Under *Addons*. Change the steps, the rules and email in the Control Panel. |
 
 Who can submit, approve and see what is covered in [How sign-off works](how-it-works.md) and [Configuration](configuration.md#who-can-approve-a-step).

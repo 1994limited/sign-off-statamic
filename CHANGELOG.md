@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- **A settings page** at Tools → Addons → Sign-off → Settings, for the steps of each collection, the rules and email. It starts from `config/sign-off.php`, and once saved is used instead of it.
+- `php please sign-off:check` warns about a step with nobody named to approve it.
+
 ## 1.0.0 (2026-10-15)
 
 The first release.
