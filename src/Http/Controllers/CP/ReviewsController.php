@@ -2,12 +2,15 @@
 
 namespace NineteenNinetyFour\SignOff\Http\Controllers\CP;
 
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Inertia\Inertia;
 use Inertia\Response;
+use NineteenNinetyFour\SignOff\Comparison;
 use NineteenNinetyFour\SignOff\Reviews;
 use Statamic\Facades\Collection as Collections;
+use Statamic\Contracts\Entries\Entry;
 use Statamic\Facades\User;
 use Statamic\Http\Controllers\CP\CpController;
 
@@ -61,6 +64,17 @@ class ReviewsController extends CpController
             'problems' => $problems,
             'urls' => ['index' => cp_route('sign-off.index')],
         ]);
+    }
+
+    /**
+     * An entry's proposed content next to the live version (or what was
+     * submitted last time), for the Sign-off panel.
+     */
+    public function compare(Request $request, Entry $entry, Comparison $comparison): JsonResponse
+    {
+        $this->authorize('view', $entry);
+
+        return response()->json($comparison->for($entry, $request->query('against')));
     }
 
     protected function paginate($items, int $page, int $perPage = 25): LengthAwarePaginator

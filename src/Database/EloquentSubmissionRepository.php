@@ -72,6 +72,7 @@ class EloquentSubmissionRepository implements SubmissionRepository
             'fingerprint' => $data['fingerprint'] ?? null,
             'steps' => $data['steps'] ?? [],
             'history' => $data['history'] ?? [],
+            'snapshot' => $data['snapshot'] ?? null,
             'updated_at' => $submission->updatedAt()?->format('Y-m-d H:i:s.u'),
         ]);
     }
@@ -94,6 +95,7 @@ class EloquentSubmissionRepository implements SubmissionRepository
             'fingerprint' => $model->fingerprint,
             'steps' => $model->steps,
             'history' => $model->history,
+            'snapshot' => $model->snapshot,
             'updated_at' => $model->updated_at,
         ]);
     }

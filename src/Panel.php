@@ -56,6 +56,10 @@ class Panel
             'history' => $history->take(5)->map(fn (Submission $submission) => $this->round($submission))->values()->all(),
             'more_history' => max(0, $history->count() - 5),
             'problems' => $problems,
+            // Something to compare: unpublished changes, or an earlier round.
+            'compare_url' => $this->signOff->hasChanges($entry) || $history->contains(fn (Submission $round) => $round->snapshot() !== null)
+                ? cp_route('sign-off.compare', $entry->id())
+                : null,
         ];
     }
 

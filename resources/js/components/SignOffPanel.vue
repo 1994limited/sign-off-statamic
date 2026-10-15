@@ -8,11 +8,12 @@
 import { FieldtypeMixin } from '@statamic/cms';
 import { Badge, Icon } from '@statamic/cms/ui';
 import { badge } from '../states.js';
+import Comparison from './Comparison.vue';
 
 export default {
     mixins: [FieldtypeMixin],
 
-    components: { Badge, Icon },
+    components: { Badge, Comparison, Icon },
 
     data() {
         return { showHistory: false };
@@ -93,6 +94,8 @@ export default {
             · <time :datetime="panel.submitted.at?.iso" :title="panel.submitted.at?.full">{{ panel.submitted.at?.human }}</time>
             <p v-if="panel.submitted.note" class="mt-1 whitespace-pre-line text-sm text-gray-800 dark:text-gray-200!">“{{ panel.submitted.note }}”</p>
         </div>
+
+        <Comparison v-if="panel.compare_url" :url="panel.compare_url" />
 
         <p v-if="panel.next" class="rounded-lg bg-gray-100 px-3 py-2 text-xs dark:bg-gray-800!">{{ panel.next }}</p>
 

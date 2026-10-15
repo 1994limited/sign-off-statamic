@@ -59,6 +59,9 @@ class Submission
 
     protected ?CarbonImmutable $updatedAt = null;
 
+    /** @var array{slug: ?string, date: ?int, data: array<string, mixed>}|null the content as submitted */
+    protected ?array $snapshot = null;
+
     protected ?string $initialPath = null;
 
     /**
@@ -91,6 +94,7 @@ class Submission
         $submission->note = is_string($data['note'] ?? null) ? $data['note'] : null;
         $submission->fingerprint = $text($data['fingerprint'] ?? '');
         $submission->updatedAt = static::date($data['updated_at'] ?? null);
+        $submission->snapshot = is_array($data['snapshot'] ?? null) ? $data['snapshot'] + ['slug' => null, 'date' => null, 'data' => []] : null;
 
         foreach (is_array($data['steps'] ?? null) ? $data['steps'] : [] as $step) {
             if (is_array($step) && is_scalar($step['handle'] ?? null)) {
@@ -195,6 +199,22 @@ class Submission
         return $this->fingerprint;
     }
 
+    /**
+     * The content as it was submitted, if it's still kept (only the two
+     * latest rounds of an entry keep theirs).
+     */
+    public function snapshot(): ?array
+    {
+        return $this->snapshot;
+    }
+
+    public function forgetSnapshot(): static
+    {
+        $this->snapshot = null;
+
+        return $this;
+    }
+
     public function updatedAt(): ?CarbonImmutable
     {
         return $this->updatedAt;
@@ -290,8 +310,9 @@ class Submission
     |--------------------------------------------------------------------------
     */
 
-    public function submit(string $user, string $fingerprint, ?string $note): static
+    public function submit(string $user, string $fingerprint, ?string $note, ?array $snapshot = null): static
     {
+        $this->snapshot = $snapshot;
         $this->state = self::IN_REVIEW;
         $this->submittedBy = $user;
         $this->submittedAt = CarbonImmutable::now();
@@ -377,6 +398,7 @@ class Submission
             'steps' => $this->steps,
             'history' => $this->history,
             'updated_at' => static::stamp($this->updatedAt),
+            'snapshot' => $this->snapshot,
         ], fn ($value) => $value !== null);
     }
 

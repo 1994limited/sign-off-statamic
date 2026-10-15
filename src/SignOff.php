@@ -96,8 +96,13 @@ class SignOff
             throw new SignOffException($reason);
         }
 
+        $content = Fingerprint::content($entry);
         $submission = Submission::make((string) $entry->id(), $entry->collectionHandle(), (string) $entry->locale(), $this->rules->steps($entry))
-            ->submit((string) $user->id(), Fingerprint::of($entry), $this->clean($note));
+            ->submit((string) $user->id(), Fingerprint::hash($content), $this->clean($note), $content);
+
+        // Only the round before this one is ever compared with.
+        $this->history($entry)->slice(1)->filter(fn (Submission $old) => $old->snapshot() !== null)
+            ->each(fn (Submission $old) => $this->submissions->save($old->forgetSnapshot()));
 
         $this->save($submission);
 

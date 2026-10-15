@@ -17,6 +17,7 @@ class SubmissionModel extends Model
     protected $casts = [
         'steps' => 'array',
         'history' => 'array',
+        'snapshot' => 'array',
     ];
 
     public function getConnectionName()

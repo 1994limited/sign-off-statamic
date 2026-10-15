@@ -25,6 +25,7 @@ return new class extends Migration
             $table->string('fingerprint', 64)->nullable();
             $table->json('steps');
             $table->json('history');
+            $table->json('snapshot')->nullable();
             $table->timestamp('updated_at', 6)->nullable();
         });
     }
