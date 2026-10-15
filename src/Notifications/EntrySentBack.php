@@ -15,8 +15,8 @@ class EntrySentBack extends SignOffNotification
 
         return $this->message()
             ->subject(__('Sent back: :entry', ['entry' => $details['entry']]))
-            ->line(__(':by sent “:entry” back at the :step step:', $details))
-            ->line($this->quote($details['comment']) ?? '')
+            ->line($this->say(':by sent “:entry” back at the :step step:', $details))
+            ->line($this->say(':comment', ['comment' => $this->quote($details['comment']) ?? '']))
             ->when($details['url'], fn ($message, $url) => $message->action(__('Open the entry'), $url))
             ->line(__('Make the changes, save, then submit it for sign-off again.'));
     }

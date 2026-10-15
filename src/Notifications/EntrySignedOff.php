@@ -15,8 +15,8 @@ class EntrySignedOff extends SignOffNotification
 
         return $this->message()
             ->subject(__('Signed off and published: :entry', ['entry' => $details['entry']]))
-            ->line(__('“:entry” has been signed off and is published.', $details))
-            ->when($details['approvers'] ?? null, fn ($message, $approvers) => $message->line(__('Approved by :approvers.', ['approvers' => $approvers])))
+            ->line($this->say('“:entry” has been signed off and is published.', $details))
+            ->when($details['approvers'] ?? null, fn ($message, $approvers) => $message->line($this->say('Approved by :approvers.', ['approvers' => $approvers])))
             ->when($details['url'], fn ($message, $url) => $message->action(__('Open the entry'), $url));
     }
 }

@@ -2,6 +2,7 @@
 
 namespace NineteenNinetyFour\SignOff\Tests\Feature;
 
+use Illuminate\Mail\Markdown;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Testing\Fakes\NotificationFake;
 use NineteenNinetyFour\SignOff\Notifications\EntrySentBack;
@@ -58,7 +59,7 @@ class NotificationsTest extends TestCase
             $email = $mail->toMail($this->author());
 
             return $email->subject === 'Sent back: About us'
-                && in_array('“Remove the pricing claim.”', $email->introLines, true)
+                && in_array('“Remove the pricing claim.”', array_map('strval', $email->introLines), true)
                 && $email->actionUrl === $page->editUrl();
         });
     }
@@ -143,12 +144,49 @@ class NotificationsTest extends TestCase
             $email = $mail->toMail($this->lawyer());
 
             $this->assertSame('Waiting for your review: About us', $email->subject);
-            $this->assertSame('Author sent “About us” (Pages) for sign-off, and it’s waiting for Legal.', $email->introLines[0]);
-            $this->assertContains('Their note: “Check the prices”', $email->introLines);
+            $lines = array_map('strval', $email->introLines);
+            $this->assertSame('Author sent “About us” (Pages) for sign-off, and it’s waiting for Legal.', $lines[0]);
+            $this->assertContains('Their note: “Check the prices”', $lines);
             $this->assertSame('Review the entry', $email->actionText);
             $this->assertSame($page->editUrl(), $email->actionUrl);
 
             return true;
         });
+    }
+
+    #[Test]
+    public function peoples_words_cant_become_links_or_markup_in_emails(): void
+    {
+        $sneaky = '[Verify your account](https://example.org/phish) <b>now</b> **please** # _x_ ![i](https://example.org/i.png)';
+
+        $page = $this->draft($sneaky);
+        $this->author()->set('name', '[Author](https://example.org/a)')->save();
+        $this->signOff()->submit($this->author(), $page, $sneaky);
+        $this->signOff()->reject($this->lawyer(), $page, $sneaky);
+
+        foreach ([[ReviewNeeded::class, $this->lawyer()], [EntrySentBack::class, $this->author()]] as [$class, $user]) {
+            Notification::assertSentTo($user, $class, function ($notification) use ($user, $sneaky) {
+                $mail = $notification->toMail($user);
+                $html = (string) $mail->render();
+                $text = (string) app(Markdown::class)->renderText($mail->markdown, $mail->data());
+
+                $this->assertStringNotContainsString('example.org', implode(' ', $this->links($html)));
+                $this->assertStringNotContainsString('<img', preg_replace('/<img[^>]+(logo|statamic)[^>]*>/i', '', $html));
+                $this->assertStringNotContainsString('<b>now</b>', $html);
+                $this->assertStringNotContainsString('<strong>please</strong>', $html);
+                // Read as written, in both parts.
+                $this->assertStringContainsString('[Verify your account](https://example.org/phish)', html_entity_decode(strip_tags($html)));
+                $this->assertStringContainsString($sneaky, $text);
+
+                return true;
+            });
+        }
+    }
+
+    protected function links(string $html): array
+    {
+        preg_match_all('/<a [^>]*href="([^"]+)"/', $html, $matches);
+
+        return $matches[1];
     }
 }
