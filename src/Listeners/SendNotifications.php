@@ -13,6 +13,7 @@ use NineteenNinetyFour\SignOff\Notifications\EntrySignedOff as SignedOffMail;
 use NineteenNinetyFour\SignOff\Notifications\ReviewNeeded;
 use NineteenNinetyFour\SignOff\Notifications\SignOffNotification;
 use NineteenNinetyFour\SignOff\Rules;
+use NineteenNinetyFour\SignOff\SignOff;
 use NineteenNinetyFour\SignOff\Submission;
 use Statamic\Contracts\Auth\User;
 use Statamic\Contracts\Entries\Entry;
@@ -69,7 +70,7 @@ class SendNotifications
      */
     public function reviewers(Submission $submission, Entry $entry): Collection
     {
-        $step = ($handle = $submission->currentStep()['handle'] ?? null) ? $this->rules->step($entry, $handle) : null;
+        $step = app(SignOff::class)->waitingStep($submission, $entry);
 
         if (! $step) {
             return collect();

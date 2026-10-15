@@ -3,6 +3,7 @@
 namespace NineteenNinetyFour\SignOff\Tests\Feature;
 
 use Inertia\Testing\AssertableInertia;
+use NineteenNinetyFour\SignOff\Actions\Unpublish;
 use NineteenNinetyFour\SignOff\Enforcement;
 use NineteenNinetyFour\SignOff\Submission;
 use NineteenNinetyFour\SignOff\Tests\TestCase;
@@ -92,6 +93,31 @@ class EnforcementTest extends TestCase
         $this->actingAs($this->author())
             ->postJson(cp_route('collections.entries.published.destroy', ['pages', $page->id()]))
             ->assertForbidden();
+    }
+
+    #[Test]
+    public function entries_can_be_taken_down_from_the_listing_too(): void
+    {
+        $page = Entry::make()->collection('pages')->slug('old')->published(true)->data(['title' => 'Old']);
+        $page->save();
+
+        $unpublish = fn ($user) => $this->actingAs($user)->postJson(cp_route('collections.entries.actions.run', 'pages'), [
+            'action' => 'unpublish',
+            'selections' => [$page->id()],
+            'values' => [],
+        ]);
+
+        $unpublish($this->author())->assertForbidden();
+        $unpublish($this->publisher())->assertOk();
+        $this->assertFalse($this->fresh($page)->published());
+
+        // Publishing from the listing still needs sign-off.
+        $this->actingAs($this->publisher())->postJson(cp_route('collections.entries.actions.run', 'pages'), [
+            'action' => 'publish', 'selections' => [$page->id()], 'values' => [],
+        ])->assertForbidden();
+
+        config(['sign-off.unpublish_without_sign_off' => false]);
+        $this->assertFalse((new Unpublish)->authorize($this->publisher(), $this->fresh($page)));
     }
 
     #[Test]

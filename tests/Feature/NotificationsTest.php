@@ -3,6 +3,7 @@
 namespace NineteenNinetyFour\SignOff\Tests\Feature;
 
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Testing\Fakes\NotificationFake;
 use NineteenNinetyFour\SignOff\Notifications\EntrySentBack;
 use NineteenNinetyFour\SignOff\Notifications\EntrySignedOff;
 use NineteenNinetyFour\SignOff\Notifications\ReviewNeeded;
@@ -118,7 +119,7 @@ class NotificationsTest extends TestCase
     #[Test]
     public function a_failed_email_does_not_stop_the_review(): void
     {
-        Notification::swap(new class extends \Illuminate\Support\Testing\Fakes\NotificationFake
+        Notification::swap(new class extends NotificationFake
         {
             public function send($notifiables, $notification)
             {

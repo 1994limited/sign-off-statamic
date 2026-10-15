@@ -11,7 +11,9 @@ use NineteenNinetyFour\SignOff\SignOffException;
 use NineteenNinetyFour\SignOff\Submission;
 use NineteenNinetyFour\SignOff\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
+use Statamic\Facades\Entry;
 use Statamic\Facades\Revision;
+use Statamic\Facades\Stache;
 
 /**
  * An entry's way through sign-off, with the file driver here and the
@@ -195,18 +197,18 @@ class SignOffFlowTest extends TestCase
     {
         // Submitted from code, in the same process that made it: the
         // in-memory entry hasn't got the blueprint key its file has.
-        $page = \Statamic\Facades\Entry::make()->collection('pages')->slug('returns')->published(false)->data(['title' => 'Returns', 'body' => '30 days.']);
+        $page = Entry::make()->collection('pages')->slug('returns')->published(false)->data(['title' => 'Returns', 'body' => '30 days.']);
         $page->save();
         $this->signOff()->submit($this->author(), $page);
 
         // Later, read back from its file.
-        \Statamic\Facades\Stache::store('entries')->clear();
-        $fromDisk = \Statamic\Facades\Entry::find($page->id());
+        Stache::store('entries')->clear();
+        $fromDisk = Entry::find($page->id());
 
         $this->signOff()->approve($this->lawyer(), $fromDisk);
-        $this->signOff()->approve($this->publisher(), \Statamic\Facades\Entry::find($page->id()));
+        $this->signOff()->approve($this->publisher(), Entry::find($page->id()));
 
-        $this->assertTrue(\Statamic\Facades\Entry::find($page->id())->published());
+        $this->assertTrue(Entry::find($page->id())->published());
     }
 
     #[Test]

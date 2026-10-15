@@ -99,7 +99,7 @@ class Panel
                 'by' => $approval ? $this->name($approval['user'] ?? '') : null,
                 'at' => $approval ? $this->when(Submission::date($approval['at'] ?? null)) : null,
                 'comment' => $approval['comment'] ?? null,
-                'approvers' => $this->signOff->stepFor($entry, $step['handle'])?->describeApprovers(),
+                'approvers' => ($this->signOff->stepFor($entry, $step['handle']) ?? new Step($step['handle'], $step['title'], []))->describeApprovers(),
             ];
         }, $steps);
     }

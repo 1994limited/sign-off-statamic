@@ -22,8 +22,8 @@ use Statamic\Events\EntrySaved;
 use Statamic\Events\RevisionSaved;
 use Statamic\Facades\CP\Nav;
 use Statamic\Facades\Permission;
-use Statamic\Facades\User;
 use Statamic\Facades\Stache;
+use Statamic\Facades\User;
 use Statamic\Providers\AddonServiceProvider;
 
 class ServiceProvider extends AddonServiceProvider
@@ -58,6 +58,7 @@ class ServiceProvider extends AddonServiceProvider
         ApproveSignOff::class,
         RejectSignOff::class,
         WithdrawSignOff::class,
+        Actions\Unpublish::class,
     ];
 
     /**

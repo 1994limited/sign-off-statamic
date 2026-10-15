@@ -4,6 +4,9 @@ namespace NineteenNinetyFour\SignOff;
 
 use Statamic\Contracts\Entries\Collection;
 use Statamic\Contracts\Entries\Entry;
+use Statamic\Facades\Role;
+use Statamic\Facades\User;
+use Statamic\Facades\UserGroup;
 use Statamic\Statamic;
 
 /**
@@ -199,19 +202,19 @@ class Rules
         $problems = [];
 
         foreach ((array) ($step->approvers['roles'] ?? []) as $role) {
-            if (! \Statamic\Facades\Role::find($role)) {
+            if (! Role::find($role)) {
                 $problems[] = __('there is no role ":handle".', ['handle' => $role]);
             }
         }
 
         foreach ((array) ($step->approvers['groups'] ?? []) as $group) {
-            if (! \Statamic\Facades\UserGroup::find($group)) {
+            if (! UserGroup::find($group)) {
                 $problems[] = __('there is no user group ":handle".', ['handle' => $group]);
             }
         }
 
         foreach ((array) ($step->approvers['users'] ?? []) as $user) {
-            if (! \Statamic\Facades\User::find($user) && ! \Statamic\Facades\User::findByEmail($user)) {
+            if (! User::find($user) && ! User::findByEmail($user)) {
                 $problems[] = __('there is no user ":handle".', ['handle' => $user]);
             }
         }

@@ -2,7 +2,9 @@
 
 namespace NineteenNinetyFour\SignOff\Tests\Feature;
 
+use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia;
+use NineteenNinetyFour\SignOff\Notifications\ReviewNeeded;
 use NineteenNinetyFour\SignOff\Panel;
 use NineteenNinetyFour\SignOff\Rules;
 use NineteenNinetyFour\SignOff\Tests\TestCase;
@@ -180,5 +182,22 @@ class SetupTest extends TestCase
             ->assertFailed()
             ->expectsOutputToContain('docs (not running)')
             ->expectsOutputToContain('Revisions are off for this collection');
+    }
+
+    #[Test]
+    public function a_step_taken_out_of_the_config_mid_review_can_still_be_finished(): void
+    {
+        Notification::fake();
+        $this->admin();
+        $page = $this->draft();
+        $this->signOff()->submit($this->author(), $page);
+
+        config(['sign-off.collections.pages.steps' => [['handle' => 'publisher', 'approvers' => 'publishers']]]);
+
+        $this->assertFalse($this->signOff()->canReview($this->lawyer(), $page));
+        $this->assertTrue($this->signOff()->canReview($this->admin(), $page));
+
+        $this->signOff()->approve($this->admin(), $page);
+        Notification::assertSentTo($this->admin(), ReviewNeeded::class);
     }
 }

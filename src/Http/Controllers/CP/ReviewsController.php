@@ -9,8 +9,8 @@ use Inertia\Inertia;
 use Inertia\Response;
 use NineteenNinetyFour\SignOff\Comparison;
 use NineteenNinetyFour\SignOff\Reviews;
-use Statamic\Facades\Collection as Collections;
 use Statamic\Contracts\Entries\Entry;
+use Statamic\Facades\Collection as Collections;
 use Statamic\Facades\User;
 use Statamic\Http\Controllers\CP\CpController;
 

@@ -124,7 +124,7 @@ class SignOff
 
         return match (true) {
             $submission === null || $step === null => __('sign-off::messages.not_in_review'),
-            ! $this->stepFor($entry, $step['handle'])?->canBeApprovedBy($user, $entry) => __('sign-off::messages.not_your_step', ['step' => $step['title']]),
+            ! $this->waitingStep($submission, $entry)->canBeApprovedBy($user, $entry) => __('sign-off::messages.not_your_step', ['step' => $step['title']]),
             ! config('sign-off.self_approval', false) && $submission->submittedBy() === (string) $user->id() && ! $user->isSuper() => __('sign-off::messages.own_submission'),
             default => null,
         };
@@ -303,6 +303,20 @@ class SignOff
     public function stepFor(Entry $entry, string $handle): ?Step
     {
         return $this->rules->step($entry, $handle);
+    }
+
+    /**
+     * The step an entry in review is waiting for. If that step has since
+     * been taken out of the config, it's kept as it was submitted, with
+     * nobody named: super users can approve it, so the review can finish.
+     */
+    public function waitingStep(Submission $submission, Entry $entry): ?Step
+    {
+        if (! $step = $submission->currentStep()) {
+            return null;
+        }
+
+        return $this->stepFor($entry, $step['handle']) ?? new Step($step['handle'], $step['title'], []);
     }
 
     /**
