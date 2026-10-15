@@ -2,7 +2,7 @@
 
 Multi-step editorial approval for Statamic Pro. Editors submit their changes, each step approves or sends them back with a reason, and nothing goes live until everyone has signed off.
 
-![An entry waiting for Legal, with its sign-off steps in the sidebar](docs/images/entry-panel.png)
+![A price change approved by Pricing and waiting for Legal, with its sign-off steps in the sidebar](docs/images/entry-panel.png)
 
 Sign-off is built on Statamic's own revisions. Changes to a live page wait in its working copy, the live page stays as it is, and the last approval publishes through Statamic, so it's recorded in the entry's revision history like any other publish.
 
@@ -21,6 +21,8 @@ Sign-off is built on Statamic's own revisions. Changes to a live page wait in it
 | What's waiting for you | Comparing changes | The dashboard widget |
 | --- | --- | --- |
 | ![Content → Sign-off](docs/images/review-page.png) | ![Live and proposed text side by side](docs/images/compare.png) | ![The Sign-off widget](docs/images/widget.png) |
+
+The screenshots are from Saltmarsh Energy, a made-up energy co-operative. **[Try the demo](https://github.com/1994limited/sign-off-statamic-demo)**: it runs locally in a few commands, with five people and a week of work in progress, and no licence needed.
 
 ## Requirements
 

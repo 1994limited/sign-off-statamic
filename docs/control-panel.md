@@ -42,6 +42,8 @@ Compare with:
 - **the live version**, for a published entry. For an entry that was never published, every field is new;
 - **what was submitted last time**, once an entry has been through a round of review. After it's sent back, the author can check their changes before submitting again, and reviewers see exactly what changed since they last looked.
 
+![A page sent back by Legal, compared with what was submitted before](images/compare-previous.png)
+
 Values are shown as people know them: rich text (Bard) as paragraphs, with headings, lists and sets marked; linked entries, terms and users by name; options by their labels; toggles as Yes or No. Anything else is shown as YAML. **Show unchanged fields** shows the rest of the entry too.
 
 ## Content → Sign-off
