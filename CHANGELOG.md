@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.1.0 (2026-10-15)
 
 ### Added
 - **A settings page** at Tools → Addons → Sign-off → Settings, for the steps of each collection, the rules and email. It starts from `config/sign-off.php`, and once saved is used instead of it.
