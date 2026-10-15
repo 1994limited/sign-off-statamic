@@ -33,10 +33,15 @@ final class Step
 
     public function canBeApprovedBy(User $user, Entry $entry): bool
     {
-        if ($user->isSuper()) {
-            return true;
-        }
+        return $user->isSuper() || $this->names($user, $entry);
+    }
 
+    /**
+     * Whether the step's own rule names the user (super users aside: they
+     * can approve any step, but aren't asked to unless nobody else can).
+     */
+    public function names(User $user, Entry $entry): bool
+    {
         if ($this->approvers === 'publishers') {
             return $user->hasPermission("publish {$entry->collectionHandle()} entries");
         }

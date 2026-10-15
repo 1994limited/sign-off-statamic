@@ -85,13 +85,19 @@ return [
     | Email
     |--------------------------------------------------------------------------
     |
-    | Reviewers are emailed when an entry reaches their step; the person who
-    | submitted it when it's approved, rejected or published.
+    | Reviewers are emailed when an entry reaches their step, and the person
+    | who submitted it when it's sent back or signed off. Super users are
+    | only emailed for steps nobody else can approve. Nobody is emailed
+    | about something they did themselves.
+    |
+    | Emails are queued when your site has a queue worker. For other
+    | channels (Slack and so on), listen for the events in
+    | NineteenNinetyFour\SignOff\Events and set mail to false.
     |
     */
 
     'notifications' => [
-        'mail' => true,
+        'mail' => env('SIGN_OFF_MAIL', true),
     ],
 
 ];

@@ -13,6 +13,7 @@ use NineteenNinetyFour\SignOff\Actions\WithdrawSignOff;
 use NineteenNinetyFour\SignOff\Contracts\SubmissionRepository;
 use NineteenNinetyFour\SignOff\Database\EloquentSubmissionRepository;
 use NineteenNinetyFour\SignOff\Listeners\AddPanel;
+use NineteenNinetyFour\SignOff\Listeners\SendNotifications;
 use NineteenNinetyFour\SignOff\Listeners\WatchRevisions;
 use NineteenNinetyFour\SignOff\Stache\StacheSubmissionRepository;
 use NineteenNinetyFour\SignOff\Stache\SubmissionsStore;
@@ -108,6 +109,10 @@ class ServiceProvider extends AddonServiceProvider
         Event::listen(RevisionSaved::class, [WatchRevisions::class, 'revisionSaved']);
         Event::listen(EntrySaved::class, [WatchRevisions::class, 'entrySaved']);
         Event::listen(EntryBlueprintFound::class, AddPanel::class);
+        Event::listen(Events\EntrySubmitted::class, [SendNotifications::class, 'submitted']);
+        Event::listen(Events\EntryApproved::class, [SendNotifications::class, 'approved']);
+        Event::listen(Events\EntryRejected::class, [SendNotifications::class, 'rejected']);
+        Event::listen(Events\EntrySignedOff::class, [SendNotifications::class, 'signedOff']);
 
         // For people who can see an entry in a collection that needs sign-off.
         Nav::extend(function ($nav) {
