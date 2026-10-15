@@ -33,10 +33,20 @@ interface SubmissionRepository
     public function open(): Collection;
 
     /**
-     * For the Control Panel: newest change first, optionally in one state
-     * or collection.
+     * For the Control Panel: newest change first, optionally only in some
+     * states or collections.
+     *
+     * @param  array<int, string>  $states
+     * @param  array<int, string>  $collections
      */
-    public function paginate(int $perPage = 25, int $page = 1, ?string $state = null, ?string $collection = null): LengthAwarePaginator;
+    public function paginate(int $perPage = 25, int $page = 1, array $states = [], array $collections = []): LengthAwarePaginator;
+
+    /**
+     * The user's own submissions, newest change first.
+     *
+     * @return Collection<int, Submission>
+     */
+    public function submittedBy(string $userId, int $limit = 20): Collection;
 
     /**
      * @return Collection<int, Submission>

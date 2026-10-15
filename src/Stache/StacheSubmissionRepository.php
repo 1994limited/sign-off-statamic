@@ -39,15 +39,24 @@ class StacheSubmissionRepository implements SubmissionRepository
             ->values();
     }
 
-    public function paginate(int $perPage = 25, int $page = 1, ?string $state = null, ?string $collection = null): LengthAwarePaginator
+    public function paginate(int $perPage = 25, int $page = 1, array $states = [], array $collections = []): LengthAwarePaginator
     {
         $submissions = $this->all()
-            ->when($state, fn ($all) => $all->filter(fn (Submission $submission) => $submission->state() === $state))
-            ->when($collection, fn ($all) => $all->filter(fn (Submission $submission) => $submission->collection() === $collection))
+            ->when($states, fn ($all) => $all->filter(fn (Submission $submission) => in_array($submission->state(), $states, true)))
+            ->when($collections, fn ($all) => $all->filter(fn (Submission $submission) => in_array($submission->collection(), $collections, true)))
             ->sortByDesc(fn (Submission $submission) => $submission->updatedAt()?->format('U.u') ?? 0)
             ->values();
 
         return new LengthAwarePaginator($submissions->forPage($page, $perPage)->values(), $submissions->count(), $perPage, $page);
+    }
+
+    public function submittedBy(string $userId, int $limit = 20): Collection
+    {
+        return $this->all()
+            ->filter(fn (Submission $submission) => $submission->submittedBy() === $userId)
+            ->sortByDesc(fn (Submission $submission) => $submission->updatedAt()?->format('U.u') ?? 0)
+            ->take($limit)
+            ->values();
     }
 
     public function all(): Collection

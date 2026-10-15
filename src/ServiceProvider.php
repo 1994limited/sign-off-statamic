@@ -19,7 +19,9 @@ use NineteenNinetyFour\SignOff\Stache\SubmissionsStore;
 use Statamic\Events\EntryBlueprintFound;
 use Statamic\Events\EntrySaved;
 use Statamic\Events\RevisionSaved;
+use Statamic\Facades\CP\Nav;
 use Statamic\Facades\Permission;
+use Statamic\Facades\User;
 use Statamic\Facades\Stache;
 use Statamic\Providers\AddonServiceProvider;
 
@@ -36,6 +38,14 @@ class ServiceProvider extends AddonServiceProvider
         ],
         'publicDirectory' => 'resources/dist',
         'hotFile' => __DIR__.'/../resources/dist/hot',
+    ];
+
+    protected $routes = [
+        'cp' => __DIR__.'/../routes/cp.php',
+    ];
+
+    protected $widgets = [
+        Widgets\SignOffWidget::class,
     ];
 
     protected $actions = [
@@ -67,6 +77,7 @@ class ServiceProvider extends AddonServiceProvider
         $this->app->singleton(Rules::class);
         $this->app->singleton(SignOff::class);
         $this->app->bind(Panel::class);
+        $this->app->bind(Reviews::class);
     }
 
     public static function repositoryFor(string $driver): string
@@ -97,6 +108,13 @@ class ServiceProvider extends AddonServiceProvider
         Event::listen(RevisionSaved::class, [WatchRevisions::class, 'revisionSaved']);
         Event::listen(EntrySaved::class, [WatchRevisions::class, 'entrySaved']);
         Event::listen(EntryBlueprintFound::class, AddPanel::class);
+
+        // For people who can see an entry in a collection that needs sign-off.
+        Nav::extend(function ($nav) {
+            if (($user = User::current()) && app(Reviews::class)->collectionsFor($user) !== []) {
+                $nav->content(__('Sign-off'))->route('sign-off.index')->icon(file_get_contents(__DIR__.'/../resources/svg/sign-off.svg'));
+            }
+        });
 
         Permission::extend(function () {
             Permission::group('sign-off', 'Sign-off', function () {

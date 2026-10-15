@@ -1,7 +1,11 @@
 import SignOffPanel from './components/SignOffPanel.vue';
+import Reviews from './pages/Reviews.vue';
+import SignOffWidget from './widgets/SignOffWidget.vue';
 
 Statamic.booting(() => {
     Statamic.$components.register('sign_off-fieldtype', SignOffPanel);
+    Statamic.$components.register('sign-off-widget', SignOffWidget);
+    Statamic.$inertia.register('sign-off::Reviews', Reviews);
 });
 
 // After a sign-off action, the entry page reloads in full and its toast

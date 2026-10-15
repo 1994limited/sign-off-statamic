@@ -11,6 +11,19 @@ use Statamic\Statamic;
  */
 class Rules
 {
+    /**
+     * The handles of the collections that have steps.
+     *
+     * @return array<int, string>
+     */
+    public function collections(): array
+    {
+        return array_values(array_filter(
+            array_map('strval', array_keys((array) config('sign-off.collections', []))),
+            fn (string $handle) => $this->covers($handle),
+        ));
+    }
+
     public function covers(Entry|Collection|string $subject): bool
     {
         return $this->steps($subject) !== [];

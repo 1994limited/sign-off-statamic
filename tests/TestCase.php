@@ -58,6 +58,7 @@ abstract class TestCase extends AddonTestCase
             'editor' => $pages,
             'legal' => $pages,
             'publisher' => [...$pages, 'publish pages entries', 'publish other authors pages entries', 'view news entries', 'edit news entries', 'publish news entries'],
+            'reporter' => ['access cp', 'view news entries', 'edit news entries'],
             'skipper' => [...$pages, 'publish pages entries', 'publish without sign-off'],
         ]);
     }

@@ -248,6 +248,27 @@ class Submission
         return null;
     }
 
+    /**
+     * When the current step started waiting: the last approval, or the
+     * submission itself.
+     */
+    public function waitingSince(): ?CarbonImmutable
+    {
+        $approval = $this->history()->where('type', 'approved')->last();
+
+        return $approval ? static::date($approval['at'] ?? null) : $this->submittedAt;
+    }
+
+    /**
+     * The most recent thing that happened in this round.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function lastEvent(): ?array
+    {
+        return $this->history()->last();
+    }
+
     public function isLastStep(string $handle): bool
     {
         return ($this->steps[array_key_last($this->steps)]['handle'] ?? null) === $handle;

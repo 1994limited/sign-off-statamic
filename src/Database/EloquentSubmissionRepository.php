@@ -35,15 +35,21 @@ class EloquentSubmissionRepository implements SubmissionRepository
             ->map(fn (SubmissionModel $model) => $this->fromModel($model))->values();
     }
 
-    public function paginate(int $perPage = 25, int $page = 1, ?string $state = null, ?string $collection = null): LengthAwarePaginator
+    public function paginate(int $perPage = 25, int $page = 1, array $states = [], array $collections = []): LengthAwarePaginator
     {
         $paginator = SubmissionModel::query()
-            ->when($state, fn ($query) => $query->where('state', $state))
-            ->when($collection, fn ($query) => $query->where('collection', $collection))
+            ->when($states, fn ($query) => $query->whereIn('state', $states))
+            ->when($collections, fn ($query) => $query->whereIn('collection', $collections))
             ->orderByDesc('updated_at')
             ->paginate($perPage, ['*'], 'page', $page);
 
         return $paginator->setCollection($paginator->getCollection()->map(fn (SubmissionModel $model) => $this->fromModel($model)));
+    }
+
+    public function submittedBy(string $userId, int $limit = 20): Collection
+    {
+        return SubmissionModel::where('submitted_by', $userId)->orderByDesc('updated_at')->limit($limit)->get()
+            ->map(fn (SubmissionModel $model) => $this->fromModel($model))->values();
     }
 
     public function all(): Collection

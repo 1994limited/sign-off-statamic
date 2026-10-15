@@ -7,6 +7,7 @@
 <script>
 import { FieldtypeMixin } from '@statamic/cms';
 import { Badge, Icon } from '@statamic/cms/ui';
+import { badge } from '../states.js';
 
 export default {
     mixins: [FieldtypeMixin],
@@ -23,15 +24,7 @@ export default {
         },
 
         badge() {
-            return {
-                in_review: { text: __('In review'), color: 'blue' },
-                rejected: { text: __('Sent back'), color: 'red' },
-                withdrawn: { text: __('Withdrawn'), color: 'default' },
-                outdated: { text: __('Needs resubmitting'), color: 'amber' },
-                published: { text: __('Signed off'), color: 'green' },
-                skipped: { text: __('Skipped'), color: 'amber' },
-                none: { text: __('Not in review'), color: 'default' },
-            }[this.panel?.state] ?? { text: this.panel?.state, color: 'default' };
+            return badge(this.panel?.state ?? 'none');
         },
 
         // Past rounds: the open one is already shown above.
@@ -107,7 +100,7 @@ export default {
                     <p v-for="(event, index) in round.events" :key="index" class="text-xs">
                         <span class="font-medium">{{ event.label }}</span>
                         <template v-if="event.step"> ({{ event.step }})</template>
-                        · {{ event.by }}
+                        <template v-if="event.by"> · {{ event.by }}</template>
                         <template v-if="event.at">· <time :datetime="event.at.iso" :title="event.at.full">{{ event.at.human }}</time></template>
                         <span v-if="event.comment" class="block whitespace-pre-line italic text-gray-600 dark:text-gray-400">“{{ event.comment }}”</span>
                     </p>

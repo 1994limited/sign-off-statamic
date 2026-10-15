@@ -2,10 +2,9 @@
 
 namespace NineteenNinetyFour\SignOff;
 
-use Carbon\CarbonImmutable;
+use NineteenNinetyFour\SignOff\Concerns\DescribesSubmissions;
 use Statamic\Contracts\Auth\User;
 use Statamic\Contracts\Entries\Entry;
-use Statamic\Facades\User as Users;
 
 /**
  * What the Sign-off panel on an entry shows: where it is, who's next,
@@ -13,8 +12,7 @@ use Statamic\Facades\User as Users;
  */
 class Panel
 {
-    /** @var array<string, string> */
-    protected array $names = [];
+    use DescribesSubmissions;
 
     public function __construct(protected SignOff $signOff) {}
 
@@ -130,62 +128,7 @@ class Panel
             'id' => $submission->id(),
             'state' => $submission->state(),
             'at' => $this->when($submission->submittedAt() ?? $submission->updatedAt()),
-            'events' => $submission->history()->map(fn (array $event) => [
-                'type' => $event['type'],
-                'label' => $this->label($event['type']),
-                'step' => $this->stepTitle($submission, $event['step'] ?? null),
-                'by' => $this->name($event['user'] ?? ''),
-                'at' => $this->when(Submission::date($event['at'] ?? null)),
-                'comment' => $event['comment'] ?? null,
-            ])->values()->all(),
+            'events' => $submission->history()->map(fn (array $event) => $this->event($submission, $event))->values()->all(),
         ];
-    }
-
-    protected function label(string $type): string
-    {
-        return match ($type) {
-            'submitted' => __('Submitted'),
-            'approved' => __('Approved'),
-            'rejected' => __('Sent back'),
-            'withdrawn' => __('Withdrawn'),
-            'published' => __('Published'),
-            'changed' => __('Changed after submission'),
-            'published_without_sign_off' => __('Published without sign-off'),
-            default => ucfirst(str_replace('_', ' ', $type)),
-        };
-    }
-
-    protected function stepTitle(Submission $submission, ?string $handle): ?string
-    {
-        if ($handle === null) {
-            return null;
-        }
-
-        return collect($submission->steps())->firstWhere('handle', $handle)['title'] ?? $handle;
-    }
-
-    protected function name(string $id): string
-    {
-        if ($id === '') {
-            return __('Someone');
-        }
-
-        return $this->names[$id] ??= (function () use ($id) {
-            $user = Users::find($id);
-
-            return $user ? ($user->name() ?: $user->email()) : __('A former user');
-        })();
-    }
-
-    /**
-     * @return array{iso: string, human: string, full: string}|null
-     */
-    protected function when(?CarbonImmutable $date): ?array
-    {
-        return $date ? [
-            'iso' => $date->toIso8601String(),
-            'human' => $date->diffForHumans(),
-            'full' => $date->format('j M Y, H:i'),
-        ] : null;
     }
 }
