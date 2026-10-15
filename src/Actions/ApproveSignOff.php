@@ -53,8 +53,8 @@ class ApproveSignOff extends SignOffAction
     {
         $submission = $this->signOff()->approve(User::current(), $this->entry($items), $values['comment'] ?? null);
 
-        return $submission->state() === Submission::PUBLISHED
+        return $this->done($submission->state() === Submission::PUBLISHED
             ? __('sign-off::messages.signed_off')
-            : __('sign-off::messages.approved', ['step' => $submission->currentStep()['title'] ?? '']);
+            : __('sign-off::messages.approved', ['step' => $submission->currentStep()['title'] ?? '']));
     }
 }

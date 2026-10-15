@@ -49,6 +49,6 @@ class RejectSignOff extends SignOffAction
     {
         $this->signOff()->reject(User::current(), $this->entry($items), (string) ($values['reason'] ?? ''));
 
-        return __('sign-off::messages.rejected');
+        return $this->done(__('sign-off::messages.rejected'));
     }
 }

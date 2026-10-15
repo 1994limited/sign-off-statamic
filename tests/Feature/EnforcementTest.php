@@ -17,13 +17,13 @@ use Statamic\Facades\Entry;
  */
 class EnforcementTest extends TestCase
 {
-    protected function action(string $handle, $entry, array $values = [])
+    protected function action(string $handle, $entry, array $values = [], string $view = 'list')
     {
         return $this->postJson(cp_route('collections.entries.actions.run', 'pages'), [
             'action' => $handle,
             'selections' => [$entry->id()],
             'values' => $values,
-            'context' => ['view' => 'form'],
+            'context' => ['view' => $view],
         ]);
     }
 
@@ -145,6 +145,31 @@ class EnforcementTest extends TestCase
             ->assertOk()->assertJsonPath('message', 'Signed off and published.');
 
         $this->assertTrue($this->fresh($page)->published());
+    }
+
+    #[Test]
+    public function on_the_entry_page_an_action_reloads_the_entry_after_it_works_but_not_after_it_fails(): void
+    {
+        $page = $this->draft();
+
+        $this->actingAs($this->author())->action('submit_for_sign_off', $page, [], 'form')
+            ->assertOk()
+            ->assertJsonPath('redirect', $page->editUrl());
+
+        // Already in review: it fails, so no reload, and the message shows.
+        $this->actingAs($this->author())->action('submit_for_sign_off', $page, [], 'form')
+            ->assertForbidden();
+
+        $this->signOff()->withdraw($this->author(), $page);
+        $page->set('title', 'Changed')->save();
+        $this->signOff()->submit($this->author(), $this->fresh($page));
+
+        // The lawyer approves, but the page was changed by code meanwhile.
+        $changed = $this->fresh($page)->set('body', 'Changed in code.');
+        $changed->save();
+
+        $this->actingAs($this->lawyer())->action('approve_sign_off', $page, [], 'form')
+            ->assertForbidden();
     }
 
     #[Test]

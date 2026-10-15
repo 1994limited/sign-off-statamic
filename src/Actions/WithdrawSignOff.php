@@ -39,6 +39,6 @@ class WithdrawSignOff extends SignOffAction
     {
         $this->signOff()->withdraw(User::current(), $this->entry($items));
 
-        return __('sign-off::messages.withdrawn');
+        return $this->done(__('sign-off::messages.withdrawn'));
     }
 }

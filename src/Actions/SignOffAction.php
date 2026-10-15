@@ -5,6 +5,7 @@ namespace NineteenNinetyFour\SignOff\Actions;
 use NineteenNinetyFour\SignOff\SignOff;
 use Statamic\Actions\Action;
 use Statamic\Contracts\Entries\Entry;
+use Statamic\Facades\CP\Toast;
 use Statamic\Facades\User;
 
 /**
@@ -32,6 +33,30 @@ abstract class SignOffAction extends Action
     public function triggersFullPageRefresh(): bool
     {
         return true;
+    }
+
+    /** Whether run() succeeded, so redirect() knows whether to reload. */
+    protected bool $succeeded = false;
+
+    /**
+     * Back to the entry, freshly loaded, after it worked: on its page, the
+     * full refresh alone doesn't pick up the lock. (A failure stays put, so
+     * its message shows.)
+     */
+    public function redirect($items, $values)
+    {
+        return $this->succeeded && ($this->context['view'] ?? null) === 'form' ? $items->first()?->editUrl() : false;
+    }
+
+    /**
+     * Report success: a toast that survives the reload, and the message.
+     */
+    protected function done(string $message): string
+    {
+        $this->succeeded = true;
+        Toast::success($message);
+
+        return $message;
     }
 
     public function bypassesDirtyWarning(): bool

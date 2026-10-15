@@ -54,6 +54,6 @@ class SubmitForSignOff extends SignOffAction
     {
         $submission = $this->signOff()->submit(User::current(), $this->entry($items), $values['note'] ?? null);
 
-        return __('sign-off::messages.submitted', ['step' => $submission->currentStep()['title'] ?? '']);
+        return $this->done(__('sign-off::messages.submitted', ['step' => $submission->currentStep()['title'] ?? '']));
     }
 }
