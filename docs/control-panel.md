@@ -44,7 +44,13 @@ Compare with:
 
 ![A page sent back by Legal, compared with what was submitted before](images/compare-previous.png)
 
-**Images and files** in assets fields, and images in Bard, show as thumbnails, outlined green when added and red when removed, with their alt text. Click one to see it full size, next to the image it replaces; ← and → move between the changed images, and Escape closes it. Reviewers can see an entry's images even without access to its asset container, but only the files the entry uses. An image replaced by a file with the same name doesn't show as a change, since the entry itself is unchanged.
+**Images and files** in assets fields, and images in Bard, show as thumbnails, outlined green when added and red when removed, with their alt text.
+
+![A new homepage photo: the old one marked Removed, the new one Added](images/compare-images.png)
+
+Click one to see it full size, next to the image it replaces; ← and → move between the changed images, and Escape closes it.
+
+![The lightbox: the live photo and the one in review side by side, with their alt text](images/lightbox.png) Reviewers can see an entry's images even without access to its asset container, but only the files the entry uses. An image replaced by a file with the same name doesn't show as a change, since the entry itself is unchanged.
 
 Other values are shown as people know them: rich text (Bard) as paragraphs, with headings, lists and sets marked; linked entries, terms and users by name; options by their labels; toggles as Yes or No. Anything else is shown as YAML. **Show unchanged fields** shows the rest of the entry too.
 
