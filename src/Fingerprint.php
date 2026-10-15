@@ -18,7 +18,9 @@ class Fingerprint
         return hash('sha256', json_encode(static::sorted([
             'slug' => $content->slug(),
             'date' => $content->collection()?->dated() ? $content->date()?->timestamp : null,
-            'data' => $content->data()->except(['updated_by', 'updated_at'])->all(),
+            // Not content: who saved it last and when, and which blueprint
+            // (written into the file on save, so a just-made entry lacks it).
+            'data' => $content->data()->except(['updated_by', 'updated_at', 'blueprint'])->all(),
         ]), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION));
     }
 

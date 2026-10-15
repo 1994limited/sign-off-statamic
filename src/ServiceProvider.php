@@ -12,9 +12,11 @@ use NineteenNinetyFour\SignOff\Actions\SubmitForSignOff;
 use NineteenNinetyFour\SignOff\Actions\WithdrawSignOff;
 use NineteenNinetyFour\SignOff\Contracts\SubmissionRepository;
 use NineteenNinetyFour\SignOff\Database\EloquentSubmissionRepository;
+use NineteenNinetyFour\SignOff\Listeners\AddPanel;
 use NineteenNinetyFour\SignOff\Listeners\WatchRevisions;
 use NineteenNinetyFour\SignOff\Stache\StacheSubmissionRepository;
 use NineteenNinetyFour\SignOff\Stache\SubmissionsStore;
+use Statamic\Events\EntryBlueprintFound;
 use Statamic\Events\EntrySaved;
 use Statamic\Events\RevisionSaved;
 use Statamic\Facades\Permission;
@@ -23,6 +25,19 @@ use Statamic\Providers\AddonServiceProvider;
 
 class ServiceProvider extends AddonServiceProvider
 {
+    protected $fieldtypes = [
+        Fieldtypes\SignOffPanel::class,
+    ];
+
+    protected $vite = [
+        'input' => [
+            'resources/js/cp.js',
+            'resources/css/cp.css',
+        ],
+        'publicDirectory' => 'resources/dist',
+        'hotFile' => __DIR__.'/../resources/dist/hot',
+    ];
+
     protected $actions = [
         SubmitForSignOff::class,
         ApproveSignOff::class,
@@ -51,6 +66,7 @@ class ServiceProvider extends AddonServiceProvider
         $this->app->singleton(SubmissionRepository::class, fn ($app) => $app->make(static::repositoryFor(config('sign-off.driver', 'file'))));
         $this->app->singleton(Rules::class);
         $this->app->singleton(SignOff::class);
+        $this->app->bind(Panel::class);
     }
 
     public static function repositoryFor(string $driver): string
@@ -80,6 +96,7 @@ class ServiceProvider extends AddonServiceProvider
 
         Event::listen(RevisionSaved::class, [WatchRevisions::class, 'revisionSaved']);
         Event::listen(EntrySaved::class, [WatchRevisions::class, 'entrySaved']);
+        Event::listen(EntryBlueprintFound::class, AddPanel::class);
 
         Permission::extend(function () {
             Permission::group('sign-off', 'Sign-off', function () {

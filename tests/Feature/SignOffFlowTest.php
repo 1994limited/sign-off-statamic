@@ -191,6 +191,25 @@ class SignOffFlowTest extends TestCase
     }
 
     #[Test]
+    public function an_entry_submitted_straight_after_it_was_made_can_still_be_approved_later(): void
+    {
+        // Submitted from code, in the same process that made it: the
+        // in-memory entry hasn't got the blueprint key its file has.
+        $page = \Statamic\Facades\Entry::make()->collection('pages')->slug('returns')->published(false)->data(['title' => 'Returns', 'body' => '30 days.']);
+        $page->save();
+        $this->signOff()->submit($this->author(), $page);
+
+        // Later, read back from its file.
+        \Statamic\Facades\Stache::store('entries')->clear();
+        $fromDisk = \Statamic\Facades\Entry::find($page->id());
+
+        $this->signOff()->approve($this->lawyer(), $fromDisk);
+        $this->signOff()->approve($this->publisher(), \Statamic\Facades\Entry::find($page->id()));
+
+        $this->assertTrue(\Statamic\Facades\Entry::find($page->id())->published());
+    }
+
+    #[Test]
     public function collections_without_steps_are_left_alone(): void
     {
         $story = $this->draft('Launch', 'news');
