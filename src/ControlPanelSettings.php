@@ -3,7 +3,9 @@
 namespace NineteenNinetyFour\SignOff;
 
 use Illuminate\Support\Arr;
+use Illuminate\Validation\ValidationException;
 use Statamic\Contracts\Addons\SettingsRepository;
+use Statamic\Events\AddonSettingsSaving;
 use Statamic\Facades\Addon;
 
 /**
@@ -49,16 +51,63 @@ class ControlPanelSettings
         $config['sign-off.collections'] = $this->collections((array) ($saved['collections'] ?? []));
 
         foreach (self::RULES as $rule) {
-            if (array_key_exists($rule, $saved)) {
-                $config["sign-off.{$rule}"] = (bool) $saved[$rule];
+            if (($value = $this->toggle($saved[$rule] ?? null)) !== null) {
+                $config["sign-off.{$rule}"] = $value;
             }
         }
 
-        if (array_key_exists('mail', $saved)) {
-            $config['sign-off.notifications.mail'] = (bool) $saved['mail'];
+        if (($mail = $this->toggle($saved['mail'] ?? null)) !== null) {
+            $config['sign-off.notifications.mail'] = $mail;
         }
 
         config($config);
+    }
+
+    /**
+     * A toggle's value, strictly: true, false, or null when it isn't one
+     * (so "false" written into the file by hand doesn't read as true).
+     */
+    protected function toggle(mixed $value): ?bool
+    {
+        return is_bool($value) ? $value : filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+    }
+
+    /**
+     * Before the page saves: each collection once, each with steps.
+     * Otherwise a second row would quietly replace the first.
+     *
+     * @throws ValidationException
+     */
+    public function validate(AddonSettingsSaving $event): void
+    {
+        if ($event->settings->addon()->package() !== self::PACKAGE) {
+            return;
+        }
+
+        $seen = [];
+        $errors = [];
+
+        foreach ((array) ($event->settings->raw()['collections'] ?? []) as $index => $row) {
+            $handle = Arr::first(Arr::wrap($row['collection'] ?? null));
+
+            if (! is_string($handle) || $handle === '') {
+                continue;
+            }
+
+            if (isset($seen[$handle])) {
+                $errors["collections.{$index}.collection"] = __('This collection is already listed above. Put all its steps in one row.');
+            }
+
+            if (array_filter((array) ($row['steps'] ?? []), 'is_array') === []) {
+                $errors["collections.{$index}.steps"] = __('Add at least one step, or remove the collection.');
+            }
+
+            $seen[$handle] = true;
+        }
+
+        if ($errors) {
+            throw ValidationException::withMessages($errors);
+        }
     }
 
     /**

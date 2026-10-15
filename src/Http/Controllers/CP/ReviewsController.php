@@ -98,17 +98,32 @@ class ReviewsController extends CpController
         if ($asset->isImage() && ! $asset->isSvg()) {
             $path = $images->generateByAsset($asset, $size === 'small' ? ['p' => 'cp_thumbnail_small_landscape'] : []);
 
-            return $glide->getResponseFactory()->create($glide->getCache(), $path);
+            return $this->private($glide->getResponseFactory()->create($glide->getCache(), $path));
         }
 
-        // Anything else as it is, and never able to run scripts (an SVG
-        // or HTML file opened on its own).
-        return response()->stream(fn () => fpassthru($asset->disk()->filesystem()->readStream($asset->path())), 200, [
-            'Content-Type' => $asset->mimeType() ?? 'application/octet-stream',
-            'Content-Disposition' => 'inline; filename="'.addcslashes($asset->basename(), '"\\').'"',
-            'Content-Security-Policy' => "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox",
+        // An SVG is shown in an <img>, which runs no scripts; opened on its
+        // own it's sandboxed. Anything else (a PDF, a document) downloads,
+        // rather than opening on the Control Panel's site.
+        $inline = $asset->isSvg();
+
+        return $this->private(response()->stream(fn () => fpassthru($asset->disk()->filesystem()->readStream($asset->path())), 200, [
+            'Content-Type' => $inline ? 'image/svg+xml' : 'application/octet-stream',
+            'Content-Disposition' => ($inline ? 'inline' : 'attachment').'; filename="'.addcslashes($asset->basename(), '"\\').'"',
+            'Content-Security-Policy' => "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox; frame-ancestors 'none'",
             'X-Content-Type-Options' => 'nosniff',
-        ]);
+        ]));
+    }
+
+    /**
+     * Previews can be of private files: never kept by shared caches.
+     */
+    protected function private(SymfonyResponse $response): SymfonyResponse
+    {
+        $response->headers->set('Cache-Control', 'private, no-store');
+        $response->headers->remove('Expires');
+        $response->headers->set('Pragma', 'no-cache');
+
+        return $response;
     }
 
     protected function paginate($items, int $page, int $perPage = 25): LengthAwarePaginator

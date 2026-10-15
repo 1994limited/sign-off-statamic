@@ -126,4 +126,30 @@ class SettingsPageTest extends TestCase
 
         $this->assertContains('pages: Legal: nobody is named to approve it, so only super users can.', collect(app(Rules::class)->problems())->map(fn ($problem) => "{$problem['collection']}: {$problem['message']}")->all());
     }
+
+    #[Test]
+    public function a_collection_can_only_be_listed_once_and_needs_steps(): void
+    {
+        $step = ['title' => 'Legal', 'handle' => 'legal', 'roles' => ['legal']];
+
+        $this->save(['collections' => [
+            ['collection' => ['pages'], 'steps' => [$step]],
+            ['collection' => ['pages'], 'steps' => [$step]],
+        ]])->assertUnprocessable()->assertJsonValidationErrors(['collections.1.collection']);
+
+        $this->assertFileDoesNotExist(resource_path('addons/sign-off-statamic.yaml'));
+    }
+
+    #[Test]
+    public function toggles_written_by_hand_are_read_strictly(): void
+    {
+        File::ensureDirectoryExists(resource_path('addons'));
+        File::put(resource_path('addons/sign-off-statamic.yaml'), "lock_during_review: 'false'\nmail: 'nonsense'\n");
+        config(['sign-off.notifications.mail' => true]);
+
+        $this->settings()->apply();
+
+        $this->assertFalse(config('sign-off.lock_during_review'));
+        $this->assertTrue(config('sign-off.notifications.mail'), 'A value that isn\'t a toggle leaves the config file\'s.');
+    }
 }

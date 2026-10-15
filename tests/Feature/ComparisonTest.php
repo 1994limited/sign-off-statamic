@@ -25,7 +25,7 @@ class ComparisonTest extends TestCase
         Blueprint::make('pages')->setNamespace('collections.pages')->setContents(['tabs' => ['main' => ['sections' => [['fields' => [
             ['handle' => 'title', 'field' => ['type' => 'text', 'display' => 'Title']],
             ['handle' => 'body', 'field' => ['type' => 'markdown', 'display' => 'Body']],
-            ['handle' => 'content', 'field' => ['type' => 'bard', 'display' => 'Content']],
+            ['handle' => 'content', 'field' => ['type' => 'bard', 'display' => 'Content', 'container' => 'assets']],
             ['handle' => 'related', 'field' => ['type' => 'entries', 'display' => 'Related']],
             ['handle' => 'featured', 'field' => ['type' => 'toggle', 'display' => 'Featured']],
             ['handle' => 'tone', 'field' => ['type' => 'select', 'display' => 'Tone', 'options' => ['plain' => 'Plain English', 'formal' => 'Formal']]],
@@ -229,7 +229,11 @@ class ComparisonTest extends TestCase
         $this->assertSame([], $row['media']['before']);
         $this->assertSame(['new-hero.jpg', 'map.png'], array_column($row['media']['after'], 'name'));
         $this->assertSame(['Breakwater Farm', 'A map'], array_column($row['media']['after'], 'alt'));
-        $this->assertSame('https://example.org/map.png', $row['media']['after'][1]['full']);
+        // An image linked by URL is offered as a link, never loaded.
+        $this->assertNull($row['media']['after'][1]['full']);
+        $this->assertTrue($row['media']['after'][1]['linked']);
+        $this->assertSame('https://example.org/map.png', $row['media']['after'][1]['url']);
+        $this->assertTrue($row['media']['after'][0]['previewable']);
         $this->assertStringContainsString('[Image: new-hero.jpg]', $row['after']);
     }
 
@@ -266,5 +270,62 @@ class ComparisonTest extends TestCase
         $this->actingAs($this->lawyer())->get($url('assets::prices.pdf'))->assertOk()->assertHeader('X-Content-Type-Options', 'nosniff');
         $svg = $this->actingAs($this->lawyer())->get($url('assets::logo.svg'))->assertOk();
         $this->assertStringContainsString('sandbox', $svg->headers->get('Content-Security-Policy'));
+    }
+
+    #[Test]
+    public function previews_only_come_from_the_fields_own_container(): void
+    {
+        $this->assets();
+        Storage::fake('private');
+        AssetContainer::make('private')->disk('private')->save();
+        Storage::disk('private')->put('salaries.pdf', '%PDF-1.4 secret');
+
+        // Saved into the entry by hand: a file from a container the field doesn't use.
+        $page = $this->changedLivePage('Home', [
+            'gallery' => ['private::salaries.pdf'],
+            'content' => [['type' => 'image', 'attrs' => ['src' => 'asset::private::salaries.pdf']]],
+        ]);
+
+        $comparison = $this->compare($page);
+        $gallery = $this->field($comparison, 'gallery')['media']['after'][0];
+        $this->assertFalse($gallery['previewable']);
+        $this->assertTrue($gallery['elsewhere']);
+        $this->assertNull($gallery['url']);
+        $this->assertFalse($this->field($comparison, 'content')['media']['after'][0]['previewable']);
+
+        $url = cp_route('sign-off.preview', ['entry' => $page->id(), 'file' => rtrim(strtr(base64_encode('private::salaries.pdf'), '+/', '-_'), '=')]);
+        $this->actingAs($this->lawyer())->get($url)->assertNotFound();
+        $this->actingAs($this->admin())->get($url)->assertNotFound();
+    }
+
+    #[Test]
+    public function bard_without_a_container_has_no_previews(): void
+    {
+        $this->assets();
+        Blueprint::find('collections.pages.pages')->ensureFieldHasConfig('content', ['container' => null])->save();
+
+        $page = $this->changedLivePage('Home', ['content' => [['type' => 'image', 'attrs' => ['src' => 'asset::assets::a.jpg']]]]);
+
+        $this->assertFalse($this->field($this->compare($page), 'content')['media']['after'][0]['previewable']);
+    }
+
+    #[Test]
+    public function previews_are_private_and_files_download(): void
+    {
+        $this->assets();
+        $page = $this->changedLivePage('Home', ['hero' => 'new-hero.jpg', 'gallery' => ['prices.pdf', 'logo.svg']]);
+        $url = fn ($id) => cp_route('sign-off.preview', ['entry' => $page->id(), 'file' => rtrim(strtr(base64_encode($id), '+/', '-_'), '=')]);
+
+        $image = $this->actingAs($this->lawyer())->get($url('assets::new-hero.jpg'))->assertOk();
+        $this->assertStringContainsString('no-store', $image->headers->get('Cache-Control'));
+        $this->assertStringContainsString('private', $image->headers->get('Cache-Control'));
+
+        $pdf = $this->actingAs($this->lawyer())->get($url('assets::prices.pdf'))->assertOk();
+        $this->assertStringStartsWith('attachment;', $pdf->headers->get('Content-Disposition'));
+        $this->assertSame('application/octet-stream', $pdf->headers->get('Content-Type'));
+
+        $svg = $this->actingAs($this->lawyer())->get($url('assets::logo.svg'))->assertOk();
+        $this->assertStringStartsWith('inline;', $svg->headers->get('Content-Disposition'));
+        $this->assertSame('image/svg+xml', $svg->headers->get('Content-Type'));
     }
 }

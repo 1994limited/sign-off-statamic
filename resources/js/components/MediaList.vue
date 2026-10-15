@@ -18,7 +18,10 @@ export default {
         },
 
         label(file) {
-            return this.side === 'before' ? __('Removed') : __('Added');
+            if (file.missing) return __('No longer in the asset library');
+            if (file.linked) return __('Linked image (not loaded)');
+            if (file.elsewhere) return __('Not previewed: from another asset folder');
+            return __('File');
         },
     },
 };
@@ -33,20 +36,20 @@ export default {
                 :class="marked(file)
                     ? (side === 'before' ? 'ring-2 ring-red-500 dark:ring-red-400!' : 'ring-2 ring-green-600 dark:ring-green-400!')
                     : 'ring-1 ring-gray-200 dark:ring-gray-700!'"
-                :aria-label="__('Open :name', { name: file.name }) + (marked(file) ? ` (${label(file)})` : '')"
+                :aria-label="__('Open :name', { name: file.name }) + (marked(file) ? ` (${side === 'before' ? __('Removed') : __('Added')})` : '')"
                 @click="$emit('open', file, side)"
             >
                 <span class="relative flex aspect-square items-center justify-center overflow-hidden rounded-md bg-gray-100 dark:bg-gray-800!">
                     <img v-if="file.thumbnail" :src="file.thumbnail" :alt="file.alt || ''" class="size-full object-contain" loading="lazy" />
                     <span v-else class="px-2 text-center text-xs text-gray-500">
                         <svg viewBox="0 0 24 24" class="mx-auto mb-1 size-8" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z" /><path d="M14 3v5h5" /></svg>
-                        {{ file.missing ? __('No longer in the asset library') : __('File') }}
+                        {{ label(file) }}
                     </span>
                     <span
                         v-if="marked(file)"
                         class="absolute left-1 top-1 rounded px-1.5 py-0.5 text-[11px] font-medium text-white"
                         :class="side === 'before' ? 'bg-red-600' : 'bg-green-700'"
-                    >{{ label(file) }}</span>
+                    >{{ side === 'before' ? __('Removed') : __('Added') }}</span>
                 </span>
                 <span class="mt-1 block truncate text-xs" :title="file.name">{{ file.name }}</span>
                 <span v-if="file.alt" class="block truncate text-xs italic text-gray-500" :title="file.alt">“{{ file.alt }}”</span>

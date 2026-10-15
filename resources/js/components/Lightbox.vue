@@ -98,8 +98,11 @@ export default {
                     <div class="flex min-h-48 items-center justify-center overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800!">
                         <img v-if="side.file?.full" :src="side.file.full" :alt="side.file.alt || side.file.name" class="max-h-[65vh] w-full object-contain" />
                         <div v-else-if="side.file" class="p-6 text-center text-sm text-gray-600 dark:text-gray-300">
-                            <p>{{ side.file.missing ? __('No longer in the asset library') : side.file.name }}</p>
-                            <a v-if="side.file.url" :href="side.file.url" target="_blank" rel="noopener" class="mt-2 inline-block underline">{{ __('Open the file') }}</a>
+                            <p v-if="side.file.missing">{{ __('No longer in the asset library') }}</p>
+                            <p v-else-if="side.file.linked">{{ __('An image linked from elsewhere. It isn’t loaded here, so the site it’s on can’t see who’s reviewing.') }}</p>
+                            <p v-else-if="side.file.elsewhere">{{ __('From an asset folder this field doesn’t use, so it isn’t previewed.') }}</p>
+                            <p v-else>{{ side.file.name }}</p>
+                            <a v-if="side.file.url" :href="side.file.url" target="_blank" rel="noopener noreferrer" class="mt-2 inline-block underline">{{ side.file.linked ? __('Open the link') : __('Download the file') }}</a>
                         </div>
                         <p v-else class="p-6 text-sm italic text-gray-500">{{ __('Nothing here') }}</p>
                     </div>

@@ -18,6 +18,7 @@ use NineteenNinetyFour\SignOff\Listeners\WatchRevisions;
 use NineteenNinetyFour\SignOff\Stache\StacheSubmissionRepository;
 use NineteenNinetyFour\SignOff\Stache\SubmissionsStore;
 use Statamic\Events\AddonSettingsSaved;
+use Statamic\Events\AddonSettingsSaving;
 use Statamic\Events\EntryBlueprintFound;
 use Statamic\Events\EntrySaved;
 use Statamic\Events\RevisionSaved;
@@ -104,6 +105,7 @@ class ServiceProvider extends AddonServiceProvider
         // the config file, which saved settings then take the place of.
         $this->registerSettingsBlueprint(fn () => app(ControlPanelSettings::class)->blueprint());
         app(ControlPanelSettings::class)->apply();
+        Event::listen(AddonSettingsSaving::class, [ControlPanelSettings::class, 'validate']);
         Event::listen(AddonSettingsSaved::class, fn (AddonSettingsSaved $event) => $event->settings->addon()->package() === ControlPanelSettings::PACKAGE
             ? app(ControlPanelSettings::class)->apply()
             : null);

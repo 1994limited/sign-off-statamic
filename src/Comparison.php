@@ -87,7 +87,7 @@ class Comparison
         return collect(array_keys($this->options($entry)))
             ->flatMap(fn (string $against) => collect($this->for($entry, $against)['fields'])->pluck('media')->filter())
             ->flatMap(fn (array $media) => [...$media['before'], ...$media['after']])
-            ->contains(fn (array $file) => $file['key'] === $assetId);
+            ->contains(fn (array $file) => $file['previewable'] && $file['key'] === $assetId);
     }
 
     /**
@@ -138,9 +138,10 @@ class Comparison
      */
     protected function media(Field $field, mixed $old, mixed $new): ?array
     {
+        $containers = $this->containers($field);
         $items = match ($field->type()) {
-            'assets' => fn ($value) => array_map(fn ($path) => $this->file($this->assetId($field, $path)), array_values(array_filter(Arr::wrap($value), 'is_string'))),
-            'bard' => fn ($value) => is_array($value) ? array_map(fn ($image) => $this->file($image['src'], $image['alt']), $this->images($value)) : [],
+            'assets' => fn ($value) => array_map(fn ($path) => $this->file($this->assetId($field, $path), $containers), array_values(array_filter(Arr::wrap($value), 'is_string'))),
+            'bard' => fn ($value) => is_array($value) ? array_map(fn ($image) => $this->file($image['src'], $containers, $image['alt']), $this->images($value)) : [],
             default => null,
         };
 
@@ -168,24 +169,43 @@ class Comparison
         ];
     }
 
+    /**
+     * The asset containers a field takes files from: the only ones its
+     * previews may come from. An entry's data could name an asset in any
+     * container, and reviewers may not have access to the others.
+     *
+     * @return array<int, string>
+     */
+    protected function containers(Field $field): array
+    {
+        $configured = array_values(array_filter(Arr::wrap($field->get('container')), 'is_string'));
+
+        if ($configured !== []) {
+            return $configured;
+        }
+
+        // An assets field with no container set uses the only one there is.
+        $all = AssetContainer::all();
+
+        return $field->type() === 'assets' && $all->count() === 1 ? [$all->first()->handle()] : [];
+    }
+
     protected function assetId(Field $field, string $path): string
     {
         if (str_contains($path, '::')) {
             return $path;
         }
 
-        $container = $field->get('container') ?? AssetContainer::all()->first()?->handle();
-
-        return "{$container}::{$path}";
+        return ($this->containers($field)[0] ?? '').'::'.$path;
     }
 
     /**
      * An asset, or an image by URL, as a preview.
      */
-    protected function file(string $reference, ?string $alt = null): array
+    protected function file(string $reference, array $containers, ?string $alt = null): array
     {
         $id = str_starts_with($reference, 'asset::') ? substr($reference, 7) : $reference;
-        $asset = str_contains($id, '::') ? Asset::find($id) : null;
+        $asset = str_contains($id, '::') && in_array(Str::before($id, '::'), $containers, true) ? Asset::find($id) : null;
 
         if ($asset) {
             $image = $asset->isImage() || $asset->isSvg();
@@ -206,21 +226,31 @@ class Comparison
                 'url' => $image ? null : $url(),
                 'alt' => $alt ?? $asset->get('alt'),
                 'missing' => false,
+                'linked' => false,
+                'elsewhere' => false,
+                'previewable' => true,
             ];
         }
 
-        // An image linked by its URL, or an asset that's gone.
-        $isUrl = (bool) preg_match('#^(https?:)?//|^/#', $reference);
+        // An image linked by its URL is never loaded on its own: it could
+        // be anywhere, and loading it would tell that place who's looking.
+        // Only an https link is offered, for the reviewer to open.
+        $linked = (bool) preg_match('#^(https?:)?//|^/#', $reference);
+        // An asset from a container the field doesn't use: named, not shown.
+        $elsewhere = ! $linked && str_contains($id, '::') && Asset::find($id) !== null;
 
         return [
             'key' => $reference,
             'name' => $this->fileName($reference),
-            'is_image' => $isUrl,
-            'thumbnail' => $isUrl ? $reference : null,
-            'full' => $isUrl ? $reference : null,
-            'url' => null,
+            'is_image' => false,
+            'thumbnail' => null,
+            'full' => null,
+            'url' => $linked && str_starts_with($reference, 'https://') ? $reference : null,
             'alt' => $alt,
-            'missing' => ! $isUrl,
+            'missing' => ! $linked && ! $elsewhere,
+            'linked' => $linked,
+            'elsewhere' => $elsewhere,
+            'previewable' => false,
         ];
     }
 

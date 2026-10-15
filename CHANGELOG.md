@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- **Previews only come from a field's own asset container.** An asset reference saved into an entry by hand, naming a container the field doesn't use, could be read through Compare changes by anyone who could view the entry. It's now named but not served.
+- **Images linked by URL in Bard aren't loaded** when comparing changes, so the site they're on can't see who's reviewing, and a link to a page on your own site isn't requested on its own. They're shown as links instead.
+- **Previews are private**: never kept by shared caches. Files other than images download rather than opening on the Control Panel's site.
+- **The settings page refuses a collection listed twice**, or listed without steps, instead of quietly keeping only the second.
+- Toggles written into the settings file by hand, like `'false'`, are read as what they say.
+
 ## 1.2.1 (2026-10-15)
 
 ### Changed
