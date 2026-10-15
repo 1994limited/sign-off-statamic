@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.2.2 (2026-10-15)
 
 ### Fixed
 - **Previews only come from a field's own asset container.** An asset reference saved into an entry by hand, naming a container the field doesn't use, could be read through Compare changes by anyone who could view the entry. It's now named but not served.
