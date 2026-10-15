@@ -2,7 +2,7 @@
 
 Multi-step editorial approval for Statamic Pro. Editors submit their changes, each step approves or sends them back with a reason, and nothing goes live until everyone has signed off.
 
-![A price change approved by Pricing and waiting for Legal, with its sign-off steps in the sidebar](docs/images/entry-panel.png)
+![Sign-off for Statamic Pro: submit, approve, publish](docs/marketplace/cover-1600x900.png)
 
 Sign-off is built on Statamic's own revisions. Changes to a live page wait in its working copy, the live page stays as it is, and the last approval publishes through Statamic, so it's recorded in the entry's revision history like any other publish.
 
