@@ -2,9 +2,14 @@
 
 namespace NineteenNinetyFour\SignOff\Tests\Feature;
 
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 use NineteenNinetyFour\SignOff\Comparison;
 use NineteenNinetyFour\SignOff\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
+use Statamic\Facades\Asset;
+use Statamic\Facades\AssetContainer;
 use Statamic\Facades\Blueprint;
 use Statamic\Facades\Entry;
 
@@ -25,7 +30,17 @@ class ComparisonTest extends TestCase
             ['handle' => 'featured', 'field' => ['type' => 'toggle', 'display' => 'Featured']],
             ['handle' => 'tone', 'field' => ['type' => 'select', 'display' => 'Tone', 'options' => ['plain' => 'Plain English', 'formal' => 'Formal']]],
             ['handle' => 'intro', 'field' => ['type' => 'section', 'display' => 'Intro']],
+            ['handle' => 'hero', 'field' => ['type' => 'assets', 'display' => 'Hero image', 'container' => 'assets', 'max_files' => 1]],
+            ['handle' => 'gallery', 'field' => ['type' => 'assets', 'display' => 'Gallery', 'container' => 'assets']],
         ]]]]]])->save();
+    }
+
+    protected function tearDown(): void
+    {
+        // Saved blueprints are files; don't leave this one for other tests.
+        File::delete(resource_path('blueprints/collections/pages/pages.yaml'));
+
+        parent::tearDown();
     }
 
     protected function compare($entry, ?string $against = null): array
@@ -48,7 +63,7 @@ class ComparisonTest extends TestCase
         $this->assertSame('live', $comparison['against']);
         $this->assertSame('Live', $comparison['before_label']);
         $this->assertSame(2, $comparison['changed']);
-        $this->assertSame(['handle' => 'body', 'display' => 'Body', 'before' => 'Old opening hours.', 'after' => 'New opening hours.', 'changed' => true], $this->field($comparison, 'body'));
+        $this->assertSame(['handle' => 'body', 'display' => 'Body', 'before' => 'Old opening hours.', 'after' => 'New opening hours.', 'changed' => true, 'media' => null], $this->field($comparison, 'body'));
         $this->assertSame([null, 'Yes'], [$this->field($comparison, 'featured')['before'], $this->field($comparison, 'featured')['after']]);
         $this->assertFalse($this->field($comparison, 'title')['changed']);
         $this->assertNull($this->field($comparison, 'intro'), 'Sections have no value to compare.');
@@ -139,5 +154,117 @@ class ComparisonTest extends TestCase
             ->assertOk()
             ->assertJsonPath('changed', 1)
             ->assertJsonPath('options.live', 'Live version');
+    }
+
+    /**
+     * An images container with a few pictures and a PDF in it.
+     */
+    protected function assets(): void
+    {
+        Storage::fake('assets');
+        AssetContainer::make('assets')->disk('assets')->save();
+
+        foreach (['old-hero.jpg', 'new-hero.jpg', 'a.jpg', 'b.jpg', 'c.jpg'] as $name) {
+            Storage::disk('assets')->put($name, UploadedFile::fake()->image($name, 40, 30)->getContent());
+        }
+        Storage::disk('assets')->put('prices.pdf', '%PDF-1.4');
+        Storage::disk('assets')->put('logo.svg', '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>');
+
+        Asset::find('assets::new-hero.jpg')->set('alt', 'The turbines at dusk')->save();
+    }
+
+    #[Test]
+    public function a_replaced_image_is_shown_next_to_its_replacement(): void
+    {
+        $this->assets();
+        $page = $this->changedLivePage('Home', ['hero' => 'new-hero.jpg']);
+        $this->fresh($page)->set('hero', 'old-hero.jpg')->save();
+
+        $media = $this->field($this->compare($page), 'hero')['media'];
+
+        $this->assertTrue($media['single']);
+        $this->assertSame('assets', $media['kind']);
+        $this->assertSame(['old-hero.jpg', 'removed'], [$media['before'][0]['name'], $media['before'][0]['status']]);
+        $this->assertSame(['new-hero.jpg', 'added', 'The turbines at dusk', true], [$media['after'][0]['name'], $media['after'][0]['status'], $media['after'][0]['alt'], $media['after'][0]['is_image']]);
+        $this->assertStringContainsString('/sign-off/compare/', $media['after'][0]['thumbnail']);
+        $this->assertStringEndsWith('/small', $media['after'][0]['thumbnail']);
+        $this->assertNotSame($media['after'][0]['thumbnail'], $media['after'][0]['full']);
+    }
+
+    #[Test]
+    public function a_gallery_shows_what_was_added_removed_and_kept(): void
+    {
+        $this->assets();
+        $page = $this->changedLivePage('Home', ['gallery' => ['b.jpg', 'c.jpg', 'prices.pdf', 'deleted.jpg']]);
+        $this->fresh($page)->set('gallery', ['a.jpg', 'b.jpg'])->save();
+
+        $media = $this->field($this->compare($page), 'gallery')['media'];
+
+        $this->assertFalse($media['single']);
+        $this->assertSame(['a.jpg' => 'removed', 'b.jpg' => 'same'], array_column($media['before'], 'status', 'name'));
+        $this->assertSame(['b.jpg' => 'same', 'c.jpg' => 'added', 'prices.pdf' => 'added', 'deleted.jpg' => 'added'], array_column($media['after'], 'status', 'name'));
+
+        [, , $pdf, $gone] = $media['after'];
+        $this->assertFalse($pdf['is_image']);
+        $this->assertNull($pdf['thumbnail']);
+        $this->assertNotNull($pdf['url']);
+        $this->assertTrue($gone['missing']);
+    }
+
+    #[Test]
+    public function images_in_bard_are_shown_too(): void
+    {
+        $this->assets();
+        $image = fn ($src, $alt = null) => ['type' => 'image', 'attrs' => ['src' => $src, 'alt' => $alt]];
+        $page = $this->changedLivePage('Home', ['content' => [
+            ['type' => 'paragraph', 'content' => [['type' => 'text', 'text' => 'Our sites.']]],
+            $image('asset::assets::new-hero.jpg', 'Breakwater Farm'),
+            $image('https://example.org/map.png', 'A map'),
+        ]]);
+        $this->fresh($page)->set('content', [['type' => 'paragraph', 'content' => [['type' => 'text', 'text' => 'Our sites.']]]])->save();
+
+        $row = $this->field($this->compare($page), 'content');
+
+        $this->assertSame('bard', $row['media']['kind']);
+        $this->assertSame([], $row['media']['before']);
+        $this->assertSame(['new-hero.jpg', 'map.png'], array_column($row['media']['after'], 'name'));
+        $this->assertSame(['Breakwater Farm', 'A map'], array_column($row['media']['after'], 'alt'));
+        $this->assertSame('https://example.org/map.png', $row['media']['after'][1]['full']);
+        $this->assertStringContainsString('[Image: new-hero.jpg]', $row['after']);
+    }
+
+    #[Test]
+    public function fields_without_images_have_no_previews(): void
+    {
+        $this->assets();
+
+        $this->assertNull($this->field($this->compare($this->changedLivePage()), 'hero')['media']);
+    }
+
+    #[Test]
+    public function reviewers_see_the_entrys_images_without_access_to_the_assets(): void
+    {
+        $this->assets();
+        $page = $this->changedLivePage('Home', ['hero' => 'new-hero.jpg', 'gallery' => ['prices.pdf', 'logo.svg']]);
+        $this->fresh($page)->set('hero', 'old-hero.jpg')->save();
+
+        $url = fn ($id, $size = null) => cp_route('sign-off.preview', array_filter(['entry' => $page->id(), 'file' => rtrim(strtr(base64_encode($id), '+/', '-_'), '='), 'size' => $size]));
+
+        // The lawyer can't see the assets container, but can review the page.
+        $this->assertFalse($this->lawyer()->can('view', Asset::find('assets::new-hero.jpg')));
+        $this->actingAs($this->lawyer())->get($url('assets::new-hero.jpg', 'small'))->assertOk()->assertHeader('Content-Type', 'image/jpeg');
+        $this->actingAs($this->lawyer())->get($url('assets::old-hero.jpg'))->assertOk();
+
+        // Files the page doesn't use aren't served.
+        $this->actingAs($this->lawyer())->get($url('assets::a.jpg'))->assertNotFound();
+        $this->actingAs($this->lawyer())->get(cp_route('sign-off.preview', ['entry' => $page->id(), 'file' => 'not-base64!']))->assertNotFound();
+
+        // Nor to people who can't see the page.
+        $this->actingAs($this->user('reporter', 'reporter'))->get($url('assets::new-hero.jpg'))->assertRedirect();
+
+        // Other files are sent as they are, unable to run scripts.
+        $this->actingAs($this->lawyer())->get($url('assets::prices.pdf'))->assertOk()->assertHeader('X-Content-Type-Options', 'nosniff');
+        $svg = $this->actingAs($this->lawyer())->get($url('assets::logo.svg'))->assertOk();
+        $this->assertStringContainsString('sandbox', $svg->headers->get('Content-Security-Policy'));
     }
 }

@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- **Image previews in Compare changes.** Assets fields and images in Bard show as thumbnails, marked added or removed, with their alt text. Click one to open it full size next to the image it replaces; ← and → move between the changed images. Reviewers see them without needing access to the asset container, but only the files the entry uses.
+
 ## 1.1.0 (2026-10-15)
 
 ### Added

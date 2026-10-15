@@ -6,16 +6,18 @@
 <script>
 import { Button, Stack, Switch } from '@statamic/cms/ui';
 import { sides } from '../diff.js';
+import Lightbox from './Lightbox.vue';
+import MediaList from './MediaList.vue';
 
 export default {
-    components: { Button, Stack, Switch },
+    components: { Button, Lightbox, MediaList, Stack, Switch },
 
     props: {
         url: { type: String, required: true },
     },
 
     data() {
-        return { open: false, loading: false, error: null, data: null, against: null, showUnchanged: false };
+        return { open: false, loading: false, error: null, data: null, against: null, showUnchanged: false, slide: null, extraSlide: null };
     },
 
     computed: {
@@ -24,12 +26,52 @@ export default {
                 .filter((field) => field.changed || this.showUnchanged)
                 .map((field) => ({ ...field, sides: field.changed ? sides(field.before, field.after) : null }));
         },
+
+        // The changed images, in order, for the lightbox: a replaced file
+        // next to its replacement, and added or removed files on their own.
+        changedSlides() {
+            return (this.data?.fields ?? []).filter((field) => field.changed && field.media).flatMap((field) => {
+                const { before, after, single } = field.media;
+
+                if (single) {
+                    return [{ field: field.display, before: before[0] ?? null, after: after[0] ?? null, pair: true }];
+                }
+
+                return [
+                    ...before.filter((file) => file.status === 'removed').map((file) => ({ field: field.display, before: file, after: null })),
+                    ...after.filter((file) => file.status === 'added').map((file) => ({ field: field.display, before: null, after: file })),
+                ];
+            });
+        },
+
+        slides() {
+            return this.extraSlide ? [...this.changedSlides, this.extraSlide] : this.changedSlides;
+        },
     },
 
     methods: {
         show() {
             this.open = true;
             this.load(this.against);
+        },
+
+        openFile(row, file, side) {
+            const index = this.changedSlides.findIndex((slide) => slide[side]?.key === file.key && slide.field === row.display);
+
+            if (index !== -1) {
+                this.extraSlide = null;
+                this.slide = index;
+                return;
+            }
+
+            // An unchanged file: shown on its own.
+            this.extraSlide = { field: row.display, [side]: { ...file, status: 'same' }, [side === 'before' ? 'after' : 'before']: null };
+            this.slide = this.changedSlides.length;
+        },
+
+        closeLightbox(index) {
+            this.slide = index;
+            if (index === null) this.extraSlide = null;
         },
 
         async load(against) {
@@ -96,7 +138,8 @@ export default {
                         <div class="grid md:grid-cols-2 md:divide-x divide-gray-200 dark:divide-gray-700!">
                             <div class="p-3">
                                 <p class="mb-1 text-xs uppercase tracking-wide text-gray-500">{{ data.before_label }}</p>
-                                <div v-if="row.changed && row.before !== null" class="whitespace-pre-wrap break-words">
+                                <MediaList v-if="row.media?.kind === 'assets' && row.before !== null" :files="row.media.before" side="before" @open="(file) => openFile(row, file, 'before')" />
+                                <div v-else-if="row.changed && row.before !== null" class="whitespace-pre-wrap break-words">
                                     <template v-for="(part, index) in row.sides.before" :key="index">
                                         <del v-if="part.type === 'removed'" class="rounded-sm bg-red-100 text-red-900 no-underline dark:bg-red-950! dark:text-red-200!">{{ part.text }}</del>
                                         <span v-else>{{ part.text }}</span>
@@ -104,11 +147,13 @@ export default {
                                 </div>
                                 <div v-else-if="row.before !== null" class="whitespace-pre-wrap break-words">{{ row.before }}</div>
                                 <p v-else class="italic text-gray-500">{{ __('Empty') }}</p>
+                                <MediaList v-if="row.media?.kind === 'bard' && row.media.before.length" class="mt-3" :files="row.media.before" side="before" @open="(file) => openFile(row, file, 'before')" />
                             </div>
 
                             <div class="border-t border-gray-200 p-3 md:border-t-0 dark:border-gray-700!">
                                 <p class="mb-1 text-xs uppercase tracking-wide text-gray-500">{{ data.after_label }}</p>
-                                <div v-if="row.changed && row.after !== null" class="whitespace-pre-wrap break-words">
+                                <MediaList v-if="row.media?.kind === 'assets'" :files="row.media.after" side="after" @open="(file) => openFile(row, file, 'after')" />
+                                <div v-else-if="row.changed && row.after !== null" class="whitespace-pre-wrap break-words">
                                     <template v-for="(part, index) in row.sides.after" :key="index">
                                         <ins v-if="part.type === 'added'" class="rounded-sm bg-green-100 text-green-900 no-underline dark:bg-green-950! dark:text-green-200!">{{ part.text }}</ins>
                                         <span v-else>{{ part.text }}</span>
@@ -116,6 +161,7 @@ export default {
                                 </div>
                                 <div v-else-if="row.after !== null" class="whitespace-pre-wrap break-words">{{ row.after }}</div>
                                 <p v-else class="italic text-gray-500">{{ row.changed ? __('Removed') : __('Empty') }}</p>
+                                <MediaList v-if="row.media?.kind === 'bard' && row.media.after.length" class="mt-3" :files="row.media.after" side="after" @open="(file) => openFile(row, file, 'after')" />
                             </div>
                         </div>
                     </section>
@@ -123,4 +169,13 @@ export default {
             </template>
         </div>
     </Stack>
+
+    <Lightbox
+        v-if="data"
+        :slides="slides"
+        :index="slide"
+        :before-label="data.before_label"
+        :after-label="data.after_label"
+        @update:index="closeLightbox"
+    />
 </template>

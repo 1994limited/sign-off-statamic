@@ -7,12 +7,16 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Inertia\Inertia;
 use Inertia\Response;
+use League\Glide\Server;
 use NineteenNinetyFour\SignOff\Comparison;
 use NineteenNinetyFour\SignOff\Reviews;
 use Statamic\Contracts\Entries\Entry;
+use Statamic\Facades\Asset as Assets;
 use Statamic\Facades\Collection as Collections;
 use Statamic\Facades\User;
 use Statamic\Http\Controllers\CP\CpController;
+use Statamic\Imaging\ImageGenerator;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 /**
  * Content → Sign-off: what's waiting for you, everything in review, and
@@ -75,6 +79,36 @@ class ReviewsController extends CpController
         $this->authorize('view', $entry);
 
         return response()->json($comparison->for($entry, $request->query('against')));
+    }
+
+    /**
+     * An image or file in an entry's comparison, for anyone who can view
+     * the entry: reviewers may not have access to the asset container.
+     * Only files the comparison shows are served.
+     */
+    public function preview(Comparison $comparison, ImageGenerator $images, Server $glide, Entry $entry, string $file, ?string $size = null): SymfonyResponse
+    {
+        $this->authorize('view', $entry);
+
+        $id = base64_decode(strtr($file, '-_', '+/'), true);
+
+        abort_unless(is_string($id) && $comparison->shows($entry, $id) && ($asset = Assets::find($id)), 404);
+
+        // Raster images through Glide, as Statamic's own thumbnails are.
+        if ($asset->isImage() && ! $asset->isSvg()) {
+            $path = $images->generateByAsset($asset, $size === 'small' ? ['p' => 'cp_thumbnail_small_landscape'] : []);
+
+            return $glide->getResponseFactory()->create($glide->getCache(), $path);
+        }
+
+        // Anything else as it is, and never able to run scripts (an SVG
+        // or HTML file opened on its own).
+        return response()->stream(fn () => fpassthru($asset->disk()->filesystem()->readStream($asset->path())), 200, [
+            'Content-Type' => $asset->mimeType() ?? 'application/octet-stream',
+            'Content-Disposition' => 'inline; filename="'.addcslashes($asset->basename(), '"\\').'"',
+            'Content-Security-Policy' => "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox",
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
 
     protected function paginate($items, int $page, int $perPage = 25): LengthAwarePaginator
