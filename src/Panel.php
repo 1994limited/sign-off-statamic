@@ -18,6 +18,22 @@ class Panel
 
     public function for(Entry $entry, ?User $viewer): array
     {
+        $problems = $this->signOff->rules()->showsProblemsTo($viewer) ? $this->signOff->rules()->problemsFor($entry) : [];
+
+        if (! $this->signOff->enforced($entry)) {
+            return [
+                'state' => 'inactive',
+                'headline' => __('Sign-off isn\'t running here'),
+                'problems' => $problems,
+                'steps' => [],
+                'submitted' => null,
+                'rejection' => null,
+                'next' => __('Until it\'s fixed, entries in this collection are published as usual. Only people who can configure collections see this.'),
+                'history' => [],
+                'more_history' => 0,
+            ];
+        }
+
         $history = $this->signOff->history($entry);
         $open = $history->first(fn (Submission $submission) => $submission->isOpen());
         $latest = $open ?? $history->first();
@@ -39,6 +55,7 @@ class Panel
             'next' => $viewer ? $this->next($viewer, $entry, $open) : null,
             'history' => $history->take(5)->map(fn (Submission $submission) => $this->round($submission))->values()->all(),
             'more_history' => max(0, $history->count() - 5),
+            'problems' => $problems,
         ];
     }
 

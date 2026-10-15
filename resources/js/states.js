@@ -8,5 +8,6 @@ export function badge(state) {
         published: { text: __('Signed off'), color: 'green' },
         skipped: { text: __('Skipped'), color: 'amber' },
         none: { text: __('Not in review'), color: 'default' },
+        inactive: { text: __('Not running'), color: 'amber' },
     }[state] ?? { text: state, color: 'default' };
 }

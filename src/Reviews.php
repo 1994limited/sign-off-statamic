@@ -48,6 +48,25 @@ class Reviews
     }
 
     /**
+     * Setup problems, for people who can fix them, with the collection's
+     * title where there is one.
+     *
+     * @return array<int, array{collection: ?string, message: string, blocking: bool}>
+     */
+    public function problemsFor(User $user): array
+    {
+        if (! $this->signOff->rules()->showsProblemsTo($user)) {
+            return [];
+        }
+
+        return array_map(fn (array $problem) => array_merge($problem, [
+            'collection' => $problem['collection'] === null
+                ? null
+                : (($collection = Collections::find($problem['collection'])) ? __($collection->title()) : $problem['collection']),
+        ]), $this->signOff->rules()->problems());
+    }
+
+    /**
      * Entries whose current step the user can approve, longest waiting first.
      *
      * @return Collection<int, Submission>

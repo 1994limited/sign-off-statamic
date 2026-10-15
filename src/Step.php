@@ -2,6 +2,7 @@
 
 namespace NineteenNinetyFour\SignOff;
 
+use Illuminate\Support\Str;
 use Statamic\Contracts\Auth\User;
 use Statamic\Contracts\Entries\Entry;
 
@@ -20,15 +21,21 @@ final class Step
         public readonly string|array $approvers,
     ) {}
 
-    public static function fromConfig(array $step): self
+    /**
+     * A step from config. A step without a handle gets one from its title
+     * (or its place), so it still has to be approved; Rules::problems()
+     * reports it.
+     */
+    public static function fromConfig(array $step, int $index = 0): self
     {
         $handle = (string) ($step['handle'] ?? '');
+        $title = (string) ($step['title'] ?? '');
 
         if ($handle === '') {
-            throw new \InvalidArgumentException('Each sign-off step needs a handle.');
+            $handle = Str::snake($title) ?: 'step_'.($index + 1);
         }
 
-        return new self($handle, (string) ($step['title'] ?? ucfirst($handle)), $step['approvers'] ?? 'publishers');
+        return new self($handle, $title !== '' ? $title : ucfirst(str_replace('_', ' ', $handle)), $step['approvers'] ?? 'publishers');
     }
 
     public function canBeApprovedBy(User $user, Entry $entry): bool

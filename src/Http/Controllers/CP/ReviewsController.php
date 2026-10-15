@@ -23,8 +23,9 @@ class ReviewsController extends CpController
     {
         $user = User::current();
         $collections = $reviews->collectionsFor($user);
+        $problems = $reviews->problemsFor($user);
 
-        abort_if($collections === [], 403);
+        abort_if($collections === [] && $problems === [], 403);
 
         $collection = in_array($request->query('collection'), $collections, true) ? $request->query('collection') : null;
         $page = max(1, (int) $request->query('page', 1));
@@ -57,6 +58,7 @@ class ReviewsController extends CpController
                 'value' => $handle,
                 'label' => __(Collections::find($handle)->title()),
             ], $collections) : [],
+            'problems' => $problems,
             'urls' => ['index' => cp_route('sign-off.index')],
         ]);
     }

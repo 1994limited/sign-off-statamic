@@ -4,6 +4,7 @@ namespace NineteenNinetyFour\SignOff\Listeners;
 
 use NineteenNinetyFour\SignOff\SignOff;
 use Statamic\Events\EntryBlueprintFound;
+use Statamic\Facades\User;
 use Statamic\Statamic;
 
 /**
@@ -21,7 +22,15 @@ class AddPanel
     {
         $entry = $event->entry;
 
-        if (! $entry || ! Statamic::isCpRoute() || ! $this->signOff->enforced($entry)) {
+        if (! $entry || ! Statamic::isCpRoute()) {
+            return;
+        }
+
+        // Where sign-off is set up but not running, the people who can fix
+        // it are told why.
+        $rules = $this->signOff->rules();
+
+        if (! $this->signOff->enforced($entry) && ! ($rules->configured($entry) && $rules->showsProblemsTo(User::current()))) {
             return;
         }
 

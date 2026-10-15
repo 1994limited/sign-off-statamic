@@ -49,6 +49,10 @@ class ServiceProvider extends AddonServiceProvider
         Widgets\SignOffWidget::class,
     ];
 
+    protected $commands = [
+        Commands\CheckSetup::class,
+    ];
+
     protected $actions = [
         SubmitForSignOff::class,
         ApproveSignOff::class,
@@ -114,9 +118,12 @@ class ServiceProvider extends AddonServiceProvider
         Event::listen(Events\EntryRejected::class, [SendNotifications::class, 'rejected']);
         Event::listen(Events\EntrySignedOff::class, [SendNotifications::class, 'signedOff']);
 
-        // For people who can see an entry in a collection that needs sign-off.
+        // For people who can see an entry in a collection that needs sign-off,
+        // and for people who can fix its setup when something's wrong.
         Nav::extend(function ($nav) {
-            if (($user = User::current()) && app(Reviews::class)->collectionsFor($user) !== []) {
+            $reviews = app(Reviews::class);
+
+            if (($user = User::current()) && ($reviews->collectionsFor($user) !== [] || $reviews->problemsFor($user) !== [])) {
                 $nav->content(__('Sign-off'))->route('sign-off.index')->icon(file_get_contents(__DIR__.'/../resources/svg/sign-off.svg'));
             }
         });

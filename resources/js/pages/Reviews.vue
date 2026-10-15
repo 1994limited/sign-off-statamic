@@ -5,12 +5,12 @@
 -->
 <script>
 import { Head, Link, router } from '@statamic/cms/inertia';
-import { Badge, Button, Header, Panel, Select, Table, TableCell, TableColumn, TableColumns, TableRow, TableRows } from '@statamic/cms/ui';
+import { Alert, Badge, Button, Header, Panel, Select, Table, TableCell, TableColumn, TableColumns, TableRow, TableRows } from '@statamic/cms/ui';
 import { badge } from '../states.js';
 import icon from '../../svg/sign-off.svg?raw';
 
 export default {
-    components: { Badge, Button, Head, Header, Link, Panel, Select, Table, TableCell, TableColumn, TableColumns, TableRow, TableRows },
+    components: { Alert, Badge, Button, Head, Header, Link, Panel, Select, Table, TableCell, TableColumn, TableColumns, TableRow, TableRows },
 
     props: {
         tab: { type: String, required: true },
@@ -19,6 +19,7 @@ export default {
         pagination: { type: Object, required: true },
         collection: { type: String, default: null },
         collections: { type: Array, default: () => [] },
+        problems: { type: Array, default: () => [] },
         urls: { type: Object, required: true },
     },
 
@@ -71,6 +72,21 @@ export default {
 
     <div class="mx-auto max-w-5xl">
         <Header :title="__('Sign-off')" :icon="icon" />
+
+        <Alert
+            v-if="problems.length"
+            class="mb-6"
+            :variant="problems.some((problem) => problem.blocking) ? 'warning' : 'default'"
+        >
+            <p class="font-medium">{{ __('Sign-off’s setup needs attention') }}</p>
+            <ul class="mt-1 list-disc space-y-1 pl-4">
+                <li v-for="(problem, index) in problems" :key="index">
+                    <strong v-if="problem.collection">{{ problem.collection }}:</strong>
+                    {{ problem.message }}
+                </li>
+            </ul>
+            <p class="mt-2 text-xs">{{ __('Only people who can configure collections see this. Run php please sign-off:check to see it from the command line.') }}</p>
+        </Alert>
 
         <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
             <nav class="flex gap-1 border-b border-gray-200 dark:border-gray-700!" :aria-label="__('Sign-off lists')">

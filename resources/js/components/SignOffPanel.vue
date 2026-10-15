@@ -42,6 +42,13 @@ export default {
             <span class="font-medium">{{ panel.headline }}</span>
         </div>
 
+        <div v-if="panel.problems?.length" class="rounded-lg border border-amber-300 bg-amber-50 p-3 dark:border-amber-800! dark:bg-amber-950/40!">
+            <p class="font-medium text-amber-900 dark:text-amber-100!">{{ __('Setup needs attention') }}</p>
+            <ul class="mt-1 list-disc space-y-1 pl-4 text-amber-900 dark:text-amber-100!">
+                <li v-for="(problem, index) in panel.problems" :key="index">{{ problem }}</li>
+            </ul>
+        </div>
+
         <div v-if="panel.rejection" class="rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-900! dark:bg-red-950/40!">
             <p class="font-medium text-red-800 dark:text-red-200!">
                 {{ __('Sent back by :name', { name: panel.rejection.by }) }}
@@ -54,7 +61,7 @@ export default {
             </p>
         </div>
 
-        <ol class="space-y-2" :aria-label="__('Steps')">
+        <ol v-if="panel.steps.length" class="space-y-2" :aria-label="__('Steps')">
             <li v-for="step in panel.steps" :key="step.handle" class="flex gap-2">
                 <span
                     class="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full"
