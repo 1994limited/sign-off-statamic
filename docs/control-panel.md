@@ -4,7 +4,7 @@
 
 Entries in collections with steps get a **Sign-off** panel at the top of their sidebar. It's worked out fresh each time the entry is opened, and isn't saved with the entry.
 
-![The Sign-off panel on an entry waiting for Legal](images/entry-panel.png)
+![The Sign-off panel on an entry waiting for Legal](https://raw.githubusercontent.com/1994limited/statamic-marketplace/main/sign-off/charts/entry-panel.png)
 
 It shows:
 
@@ -35,22 +35,22 @@ Save before submitting: only saved changes are sent.
 
 **Compare changes** in the panel shows each changed field side by side, with the words that differ highlighted. It's there whenever there's something to compare.
 
-![Live and proposed text side by side](images/compare.png)
+![Live and proposed text side by side](https://raw.githubusercontent.com/1994limited/statamic-marketplace/main/sign-off/charts/compare.png)
 
 Compare with:
 
 - **the live version**, for a published entry. For an entry that was never published, every field is new;
 - **what was submitted last time**, once an entry has been through a round of review. After it's sent back, the author can check their changes before submitting again, and reviewers see exactly what changed since they last looked.
 
-![A page sent back by Legal, compared with what was submitted before](images/compare-previous.png)
+![A page sent back by Legal, compared with what was submitted before](https://raw.githubusercontent.com/1994limited/statamic-marketplace/main/sign-off/charts/compare-previous.png)
 
 **Images and files** in assets fields, and images in Bard, show as thumbnails, outlined green when added and red when removed, with their alt text.
 
-![A new homepage photo: the old one marked Removed, the new one Added](images/compare-images.png)
+![A new homepage photo: the old one marked Removed, the new one Added](https://raw.githubusercontent.com/1994limited/statamic-marketplace/main/sign-off/charts/compare-images.png)
 
 Click one to see it full size, next to the image it replaces; ← and → move between the changed images, and Escape closes it.
 
-![The lightbox: the live photo and the one in review side by side, with their alt text](images/lightbox.png) Reviewers can see an entry's images even without access to its asset container, but only the files the entry uses. An image replaced by a file with the same name doesn't show as a change, since the entry itself is unchanged.
+![The lightbox: the live photo and the one in review side by side, with their alt text](https://raw.githubusercontent.com/1994limited/statamic-marketplace/main/sign-off/charts/lightbox.png) Reviewers can see an entry's images even without access to its asset container, but only the files the entry uses. An image replaced by a file with the same name doesn't show as a change, since the entry itself is unchanged.
 
 Other values are shown as people know them: rich text (Bard) as paragraphs, with headings, lists and sets marked; linked entries, terms and users by name; options by their labels; toggles as Yes or No. Anything else is shown as YAML. **Show unchanged fields** shows the rest of the entry too.
 
@@ -58,13 +58,13 @@ Other values are shown as people know them: rich text (Bard) as paragraphs, with
 
 Everyone who can view entries in a collection with steps gets **Sign-off** under Content.
 
-![What's waiting for you](images/review-page.png)
+![What's waiting for you](https://raw.githubusercontent.com/1994limited/statamic-marketplace/main/sign-off/charts/review-page.png)
 
 - **Waiting for you**: entries whose current step you can approve, the longest waiting first. **Review** opens the entry.
 - **In review**: everything in review that you can see, with the step it's waiting for and who submitted it.
 - **History**: every finished round, newest first: signed off, sent back (with the reason), withdrawn, needing resubmitting, or published without sign-off.
 
-![Every round's outcome](images/history.png)
+![Every round's outcome](https://raw.githubusercontent.com/1994limited/statamic-marketplace/main/sign-off/charts/history.png)
 
 With more than one collection, you can show one at a time. Entries that have been deleted leave the first two lists, and stay in the history.
 
@@ -77,7 +77,7 @@ With more than one collection, you can show one at a time. Entries that have bee
 ],
 ```
 
-![The Sign-off widget](images/widget.png)
+![The Sign-off widget](https://raw.githubusercontent.com/1994limited/statamic-marketplace/main/sign-off/charts/widget.png)
 
 It shows each person:
 
@@ -96,7 +96,7 @@ People who can't see entries in any collection with steps don't see the widget.
 
 People who can configure collections (and super users) are told when sign-off's setup has a problem: a collection without revisions, a step without a handle, a role that doesn't exist. They see it at the top of Content → Sign-off, and in the panel of entries where sign-off isn't running and why.
 
-![Sign-off isn't running for this collection, and why](images/setup-problem.png)
+![Sign-off isn't running for this collection, and why](https://raw.githubusercontent.com/1994limited/statamic-marketplace/main/sign-off/charts/setup-problem.png)
 
 Run `php please sign-off:check` to see the same from the command line. See [Troubleshooting](troubleshooting.md).
 

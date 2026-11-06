@@ -8,7 +8,7 @@ Sign-off emails people when there's something for them to do, or something they'
 | A reviewer sends it back | The person who submitted it | Sent back: *title* |
 | The last step approves it | The person who submitted it | Signed off and published: *title* |
 
-![The "Waiting for your review" email](images/email.png)
+![The "Waiting for your review" email](https://raw.githubusercontent.com/1994limited/statamic-marketplace/main/sign-off/charts/email.png)
 
 Each email links straight to the entry. The review request includes the author's note and who has approved so far; the sent-back email includes the reason.
 
